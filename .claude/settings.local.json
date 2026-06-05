@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import sys;sys.stdout.reconfigure\\(encoding='utf-8'\\);from main import create_agent;agent=create_agent\\(\\);result,trace=agent.run\\('查一下今年的销售情况'\\);print\\('Result:',result\\);print\\('Steps:',trace.total_steps\\)\")"
+    ]
+  }
+}
