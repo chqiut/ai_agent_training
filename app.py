@@ -20,6 +20,10 @@ from dotenv import load_dotenv
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
+# 配置日志系统
+from core.utils import setup_logging
+setup_logging(log_level=os.getenv("LOG_LEVEL", "INFO"))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -28,6 +32,9 @@ from typing import Optional
 import uuid
 
 from main import process, create_agent
+from core.utils import get_logger
+
+logger = get_logger("app")
 
 # =============================================================================
 # FastAPI 应用初始化
@@ -154,6 +161,7 @@ async def chat(request: ChatRequest):
         )
 
     except Exception as e:
+        logger.error(f"聊天接口错误: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -181,6 +189,7 @@ async def clear(request: ClearRequest):
         )
 
     except Exception as e:
+        logger.error(f"清空会话接口错误: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

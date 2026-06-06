@@ -28,6 +28,9 @@ from dataclasses import dataclass
 
 from core.agent_runtime import AgentRuntime, ReActTrace
 from core.llm_client import LLMClient
+from core.utils import get_logger
+
+logger = get_logger("main")
 
 
 @dataclass
@@ -172,6 +175,7 @@ def main():
             print("\n再见！")
             break
         except Exception as e:
+            logger.error(f"执行出错: {e}")
             print(f"\n错误: {e}")
 
 

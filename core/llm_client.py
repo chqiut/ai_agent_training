@@ -23,7 +23,13 @@ import os
 import json
 from typing import Optional, Iterator
 from dataclasses import dataclass, field
+from functools import wraps
 import requests
+
+# 导入工具模块
+from core.utils import get_logger, LLM_RETRY_CONFIG
+
+logger = get_logger("llm_client")
 
 # DeepSeek API 配置
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
@@ -227,7 +233,52 @@ class LLMClient:
             return llm_response
 
         except requests.exceptions.RequestException as e:
+            logger.error(f"LLM API 请求失败: {e}")
             raise RuntimeError(f"LLM API 请求失败: {e}")
+
+    def chat_with_retry(
+        self,
+        messages: list[Message],
+        tools: Optional[list] = None,
+        stream: bool = False,
+        max_attempts: int = None,
+        base_delay: float = None
+    ) -> LLMResponse:
+        """
+        带重试机制的对话请求
+
+        Args:
+            messages: 对话历史列表
+            tools: 可选的工具列表（用于 Function Calling）
+            stream: 是否使用流式响应
+            max_attempts: 最大重试次数（默认使用 LLM_RETRY_CONFIG 配置）
+            base_delay: 基础延迟时间（秒）
+
+        Returns:
+            LLMResponse 对象
+        """
+        from tenacity import (
+            retry,
+            stop_after_attempt,
+            wait_exponential,
+            retry_if_exception_type
+        )
+        import time
+
+        config = LLM_RETRY_CONFIG
+        max_attempts = max_attempts or config.max_attempts
+        base_delay = base_delay or config.base_delay
+
+        @retry(
+            stop=stop_after_attempt(max_attempts),
+            wait=wait_exponential(multiplier=1, min=base_delay, max=config.max_delay),
+            retry=retry_if_exception_type((requests.exceptions.RequestException, TimeoutError)),
+            before=lambda _: logger.info(f"LLM API 调用失败，准备重试...")
+        )
+        def _call_llm():
+            return self.chat(messages, tools, stream)
+
+        return _call_llm()
 
     def stream_chat(
         self,

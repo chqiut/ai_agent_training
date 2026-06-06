@@ -34,3 +34,9 @@ pytest-asyncio
 
 # 类型提示
 typing_extensions
+
+# 日志
+loguru
+
+# 重试机制
+tenacity
