@@ -67,12 +67,15 @@ ai_agent_training/
 │   ├── web_search_mcp.py
 │   └── start_mcp.sh
 ├── skills/                  # Skill 剧本
-│   └── industry_insight.md
+│   ├── industry_insight.md     # 行业洞察剧本
+│   └── frontend_design_guide.md # 前端设计指南剧本
 ├── static/                  # 前端静态资源
 │   ├── css/style.css
 │   └── js/app.js
 ├── templates/               # HTML 模板
-│   └── index.html
+│   ├── index.html              # Web 界面模板
+│   └── presentations/          # 演示文稿模板
+│       └── dark_botanical.py   # Dark Botanical 风格
 ├── data/                    # CSV 数据文件
 ├── duckdb/                   # DuckDB 数据库
 ├── faiss_index/              # FAISS 向量索引
@@ -168,7 +171,8 @@ Observe: 获取工具结果
 - `web_search`: 搜索互联网
 - `python_exec`: 执行 Python 代码
 - `rag_retrieve`: 向量数据库检索
-- `skill_load`: 加载 Skill 剧本
+- `skill_load`: 加载 Skill 剧本（支持 YAML frontmatter 元数据）
+- `html_generate`: 生成 HTML 演示文稿（支持 text/data/trends 三种页面类型）
 
 ## API 接口
 
