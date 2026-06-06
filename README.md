@@ -204,9 +204,7 @@ curl -X POST http://localhost:8001/chat \
   -d '{"message": "分析本月销售额"}'
 
 # 流式模式（SSE）
-curl -N -X POST http://localhost:8001/chat/stream \
-  -H "Content-Type: application/json" \
-  -d '{"message": "分析本月销售额"}'
+curl -N "http://localhost:8001/chat/stream?message=分析本月销售额&conversation_id="
 ```
 
 ### Web 界面功能
