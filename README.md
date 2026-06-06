@@ -191,7 +191,8 @@ Observe: 获取工具结果
 | `/` | GET | API 信息 |
 | `/index` | GET | Web 界面 |
 | `/chat` | POST | 聊天接口 |
-| `/chat/stream` | POST | 流式聊天接口（SSE） |
+| `/chat/stream` | GET | 流式聊天接口（SSE） |
+| `/chat/history` | GET | 获取会话历史 |
 | `/clear` | POST | 清空会话 |
 | `/health` | GET | 健康检查 |
 
@@ -205,6 +206,9 @@ curl -X POST http://localhost:8001/chat \
 
 # 流式模式（SSE）
 curl -N "http://localhost:8001/chat/stream?message=分析本月销售额&conversation_id="
+
+# 获取会话历史
+curl "http://localhost:8001/chat/history?conversation_id=xxx"
 ```
 
 ### Web 界面功能
