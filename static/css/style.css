@@ -185,6 +185,14 @@ html, body {
     margin-bottom: 4px;
 }
 
+.tool-call-section {
+    margin-bottom: 10px;
+}
+
+.tool-call-section .tool-label {
+    color: var(--accent-green);
+}
+
 .tool-call {
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);

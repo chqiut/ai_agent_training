@@ -422,7 +422,7 @@ async function sendMessageStream(message) {
                             }
                             break;
 
-                        case 'tool':
+                        case 'tool_call':
                             // 工具调用
                             if (currentStepDiv) {
                                 const header = currentStepDiv.querySelector('.step-header .step-title');
