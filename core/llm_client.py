@@ -205,6 +205,8 @@ class LLMClient:
             # 检查 HTTP 状态码
             response.raise_for_status()
 
+            response.raise_for_status()
+
             # 解析 JSON 响应
             result = response.json()
 

@@ -557,6 +557,7 @@ class AgentRuntime:
 
             for call, result in zip(tool_calls, tool_results):
                 tool_name = call["function"]["name"]
+                call_id = call.get("id", "")
 
                 if result.get("success"):
                     result_text = json.dumps(result, ensure_ascii=False, indent=2)
@@ -573,7 +574,8 @@ class AgentRuntime:
 
                 messages.append(Message(
                     "tool",
-                    f"[{tool_name}]\n{result_text}"
+                    f"[{tool_name}]\n{result_text}",
+                    tool_call_id=call_id
                 ))
 
                 self.memory.add_tool_call(
