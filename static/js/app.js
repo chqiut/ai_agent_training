@@ -426,6 +426,8 @@ async function sendMessageStream(message) {
                             // 最终回复
                             finalResponse = content;
                             if (currentStepDiv) {
+                                const header = currentStepDiv.querySelector('.step-header .step-title');
+                                if (header) header.textContent = '完成';
                                 const label = currentStepDiv.querySelector('.thought-label');
                                 if (label) label.textContent = '最终回复';
                             }
