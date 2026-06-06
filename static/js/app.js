@@ -262,6 +262,109 @@ async function sendMessage(message) {
     }
 }
 
+/**
+ * 发送消息到后端（流式 SSE）
+ */
+async function sendMessageStream(message) {
+    return new Promise((resolve, reject) => {
+        const eventSource = new EventSource(`${API_BASE}/chat/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                conversation_id: conversationId
+            })
+        });
+
+        let responseText = '';
+        let currentStepDiv = null;
+        let thoughtSection = null;
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                const type = data.type;
+                const content = data.content || '';
+
+                switch (type) {
+                    case 'step':
+                        // 开始新步骤
+                        currentStepDiv = document.createElement('div');
+                        currentStepDiv.className = 'trace-step';
+                        currentStepDiv.innerHTML = `
+                            <div class="step-header">
+                                <span class="step-number">${data.step}</span>
+                                <span class="step-title">步骤 ${data.step}</span>
+                            </div>
+                            <div class="step-content expanded">
+                                <div class="thought-section">
+                                    <div class="thought-label">执行中...</div>
+                                   <div class="thought-content streaming"></div>
+                                </div>
+                            </div>
+                        `;
+                        traceContent.appendChild(currentStepDiv);
+                        thoughtSection = currentStepDiv.querySelector('.thought-content');
+                        break;
+
+                    case 'thought':
+                        // 思考内容
+                        if (currentStepDiv) {
+                            const header = currentStepDiv.querySelector('.step-header .step-title');
+                            header.textContent = '思考中...';
+                            if (thoughtSection) {
+                                thoughtSection.textContent = content;
+                            }
+                        }
+                        break;
+
+                    case 'tool':
+                        // 工具调用
+                        if (currentStepDiv) {
+                            const header = currentStepDiv.querySelector('.step-header .step-title');
+                            header.textContent = content;
+                        }
+                        break;
+
+                    case 'final':
+                        // 最终回复
+                        if (thoughtSection) {
+                            thoughtSection.textContent = content;
+                        }
+                        resolve({ response: content, conversation_id: data.conversation_id });
+                        break;
+
+                    case 'done':
+                        // 完成
+                        conversationId = data.conversation_id;
+                        break;
+
+                    case 'error':
+                        // 错误
+                        eventSource.close();
+                        reject(new Error(content));
+                        break;
+
+                    case 'close':
+                        // 关闭
+                        eventSource.close();
+                        break;
+                }
+            } catch (e) {
+                console.error('SSE 解析错误:', e);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE 错误:', error);
+            eventSource.close();
+            reject(error);
+        };
+    });
+}
+
 // ============================================================================
 // 事件处理
 // ============================================================================
@@ -288,23 +391,34 @@ async function handleSend() {
     traceContent.innerHTML = '';
 
     try {
-        // 调用 API
-        const data = await sendMessage(message);
+        // 判断是否使用流式
+        if (document.getElementById('stream-toggle') && document.getElementById('stream-toggle').checked) {
+            // 流式模式
+            const data = await sendMessageStream(message);
 
-        // 保存 conversation_id
-        if (data.conversation_id) {
-            conversationId = data.conversation_id;
-        }
+            // 添加助手消息
+            if (data.response) {
+                addMessage('assistant', data.response);
+            }
+        } else {
+            // 非流式模式
+            const data = await sendMessage(message);
 
-        // 添加助手消息
-        if (data.response) {
-            addMessage('assistant', data.response);
-        }
+            // 保存 conversation_id
+            if (data.conversation_id) {
+                conversationId = data.conversation_id;
+            }
 
-        // 添加 Trace
-        if (data.trace && data.trace.steps) {
-            for (const step of data.trace.steps) {
-                addTraceStep(step);
+            // 添加助手消息
+            if (data.response) {
+                addMessage('assistant', data.response);
+            }
+
+            // 添加 Trace
+            if (data.trace && data.trace.steps) {
+                for (const step of data.trace.steps) {
+                    addTraceStep(step);
+                }
             }
         }
 
