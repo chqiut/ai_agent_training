@@ -425,8 +425,18 @@ class AgentRuntime:
                     #成功：将结果转换为 JSON 字符串
                     result_content = json.dumps(result, ensure_ascii=False, indent=2)
                 else:
-                    # 失败：返回错误信息
-                    result_content = f"错误: {result.get('error', '未知错误')}"
+                    # 失败：返回错误信息，并提示可以尝试其他工具
+                    error_msg = result.get('error', '未知错误')
+                    suggestion = ""
+
+                    # 针对搜索类工具，提示可以尝试 python_exec
+                    if 'search' in tool_name.lower() or 'web' in tool_name.lower():
+                        suggestion = "\n\n提示：该工具执行失败，可以尝试使用 python_exec 工具获取网络信息。"
+                    # 针对 python_exec 失败，提示可以尝试搜索
+                    elif 'python' in tool_name.lower():
+                        suggestion = "\n\n提示：该工具执行失败，可以尝试使用 web_search 工具搜索网络信息。"
+
+                    result_content = f"错误: {error_msg}{suggestion}"
 
                 # 加入对话历史
                 # 角色是 "tool"，表示这是工具执行的结果
@@ -551,7 +561,15 @@ class AgentRuntime:
                 if result.get("success"):
                     result_text = json.dumps(result, ensure_ascii=False, indent=2)
                 else:
-                    result_text = f"错误: {result.get('error', '未知错误')}"
+                    error_msg = result.get('error', '未知错误')
+                    suggestion = ""
+
+                    if 'search' in tool_name.lower() or 'web' in tool_name.lower():
+                        suggestion = "\n\n提示：该工具执行失败，可以尝试使用 python_exec 工具获取网络信息。"
+                    elif 'python' in tool_name.lower():
+                        suggestion = "\n\n提示：该工具执行失败，可以尝试使用 web_search 工具搜索网络信息。"
+
+                    result_text = f"错误: {error_msg}{suggestion}"
 
                 messages.append(Message(
                     "tool",
