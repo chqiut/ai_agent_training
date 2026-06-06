@@ -188,9 +188,13 @@ def build_system_prompt(tools: list[dict], include_memory: bool = True) -> str:
     Returns:
         完整的 System Prompt 字符串
     """
+    from datetime import datetime
+
     tool_descriptions = build_tool_description(tools)
+    current_date = datetime.now().strftime("%Y年%m月%d日")
 
     parts = [
+        f"当前日期：{current_date}\n\n",
         BASE_SYSTEM_PROMPT.format(tool_descriptions=tool_descriptions),
         "\n\n",
         REACT_SYSTEM_PROMPT.format(tool_descriptions=tool_descriptions),
