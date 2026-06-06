@@ -201,6 +201,64 @@ SKILL_LOAD_SCHEMA = {
     }
 }
 
+# HTML 演示文稿生成工具
+HTML_GENERATE_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "html_generate",
+        "description": "生成 HTML 演示文稿，支持多种样式主题。\n\n"
+                     "适用场景：\n"
+                     "- 生成专业的演示文稿\n"
+                     "- 创建数据可视化报告\n"
+                     "- 制作趋势分析展示\n\n"
+                     "使用示例：\n"
+                     "- '生成一个关于餐饮行业分析的演示文稿'\n"
+                     "- '创建一个展示销售数据的3页PPT'\n\n"
+                     "样式选项：\n"
+                     "- dark_botanical: 优雅深色主题，适合正式场合\n\n"
+                     "页面类型：\n"
+                     "- text: 普通文本页\n"
+                     "- data: 数据展示页（使用 data卡片）\n"
+                     "- trends: 趋势列表页",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "演示文稿的主题/标题"
+                },
+                "style": {
+                    "type": "string",
+                    "description": "样式名称，目前支持: dark_botanical",
+                    "default": "dark_botanical"
+                },
+                "pages": {
+                    "type": "array",
+                    "description": "页面内容列表，每页是一个对象",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string",
+                                "description": "页面标题"
+                            },
+                            "content_type": {
+                                "type": "string",
+                                "description": "内容类型: text（文本）, data（数据卡片）, trends（趋势列表）"
+                            },
+                            "content": {
+                                "description": "页面内容，根据 content_type 不同格式不同"
+                            }
+                        },
+                        "required": ["title", "content_type", "content"]
+                    }
+                }
+            },
+            "required": ["topic", "pages"]
+        }
+    }
+}
+
 # =============================================================================
 # 工具列表
 # =============================================================================
@@ -213,6 +271,7 @@ ALL_TOOL_SCHEMAS = [
     PYTHON_EXEC_SCHEMA,
     RAG_RETRIEVE_SCHEMA,
     SKILL_LOAD_SCHEMA,
+    HTML_GENERATE_SCHEMA,
 ]
 
 

@@ -35,7 +35,7 @@ class TestToolSchemas:
     def test_all_schemas_exist(self):
         """测试所有 Schema 都已定义"""
         assert len(ALL_TOOL_SCHEMAS) > 0
-        assert len(ALL_TOOL_SCHEMAS) == 5
+        assert len(ALL_TOOL_SCHEMAS) == 6
 
     def test_duckdb_schema(self):
         """测试 DuckDB Schema"""

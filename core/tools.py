@@ -308,10 +308,51 @@ def rag_retrieve(query: str, top_k: int = 3) -> dict[str, Any]:
         }
 
 
+def _parse_skill_frontmatter(content: str) -> dict:
+    """
+    解析 Skill 文件的 YAML frontmatter
+
+    Args:
+        content: 文件完整内容
+
+    Returns:
+        包含 metadata 和 body 的字典
+    """
+    import re
+
+    # 检查是否有 frontmatter
+    pattern = r'^---\n(.*?)\n---\n(.*)$'
+    match = re.match(pattern, content, re.DOTALL)
+
+    if match:
+        frontmatter_text = match.group(1)
+        body = match.group(2)
+
+        # 简单解析 YAML frontmatter（支持基础字段）
+        metadata = {}
+        for line in frontmatter_text.split('\n'):
+            if ':' in line:
+                key, value = line.split(':',1)
+                key = key.strip()
+                value = value.strip()
+
+                # 解析列表格式 [item1, item2]
+                if value.startswith('[') and value.endswith(']'):
+                    items = [item.strip() for item in value[1:-1].split(',')]
+                    metadata[key] = items
+                else:
+                    metadata[key] = value
+
+        return {"metadata": metadata, "body": body}
+
+    # 没有 frontmatter，返回默认结构
+    return {"metadata": {}, "body": content}
+
+
 @register_tool("skill_load")
 def skill_load(skill_name: str) -> dict[str, Any]:
     """
-    加载 Skill 剧本
+    加载 Skill 剧本（支持 YAML frontmatter 元数据）
 
     Args:
         skill_name: Skill 名称（不含 .md）
@@ -319,7 +360,9 @@ def skill_load(skill_name: str) -> dict[str, Any]:
     Returns:
         包含加载结果的字典：
         - success: 是否成功
-        - content: 剧本内容（如果成功）
+        - content: 剧本正文内容
+        - metadata: frontmatter 元数据（如果存在）
+        - skill_name: skill 名称
         - error: 错误信息
     """
     try:
@@ -332,15 +375,20 @@ def skill_load(skill_name: str) -> dict[str, Any]:
             return {
                 "success": False,
                 "error": f"Skill '{skill_name}' 不存在，路径: {skill_path}",
-                "content": None
+                "content": None,
+                "metadata": None
             }
 
         with open(skill_path, 'r', encoding='utf-8') as f:
             content = f.read()
 
+        # 解析 frontmatter
+        parsed = _parse_skill_frontmatter(content)
+
         return {
             "success": True,
-            "content": content,
+            "content": parsed["body"],
+            "metadata": parsed["metadata"],
             "skill_name": skill_name
         }
 
@@ -348,7 +396,116 @@ def skill_load(skill_name: str) -> dict[str, Any]:
         return {
             "success": False,
             "error": str(e),
-            "content": None
+            "content": None,
+            "metadata": None
+        }
+
+
+@register_tool("html_generate")
+def html_generate(topic: str, style: str, pages: list[dict]) -> dict[str, Any]:
+    """
+    生成 HTML 演示文稿
+
+    Args:
+        topic: 演示文稿主题
+        style: 样式名称（目前支持: dark_botanical）
+        pages: 页面内容列表，每项包含:
+            - title: 页面标题
+            - content: 内容（根据 content_type 不同格式）
+            - content_type: 内容类型 (text/data/trends)
+
+    Returns:
+        包含生成结果的字典：
+        - success: 是否成功
+        - html: 生成的 HTML 代码
+        - file_path: 保存的文件路径
+        - error: 错误信息（如果失败）
+
+    使用示例：
+        html_generate(
+            topic="餐饮行业分析",
+            style="dark_botanical",
+            pages=[
+                {"title": "行业现状", "content_type": "text", "content": "描述文字..."},
+                {"title": "关键数据", "content_type": "data", "content": [
+                    {"value": "5.6万亿", "label": "市场规模"},
+                    {"value": "30%", "label": "连锁化率"}
+                ]},
+                {"title": "发展趋势", "content_type": "trends", "content": [
+                    {"icon": "📱", "title": "数字化", "description": "..."}
+                ]}
+            ]
+        )
+    """
+    try:
+        from pathlib import Path
+        import re
+
+        # 延迟导入模板
+        from templates.presentations.dark_botanical import (
+            DARK_BOTANICAL_TEMPLATE,
+            generate_slide_title,
+            generate_slide_data,
+            generate_slide_trends,
+            generate_slide_content,
+        )
+
+        project_root = Path(__file__).parent.parent
+
+        # 生成安全的文件名
+        safe_topic = re.sub(r'[^\w\s一-鿿-]', '', topic)
+        safe_topic = re.sub(r'\s+', '_', safe_topic)[:30]
+        output_dir = project_root / "output"
+        output_dir.mkdir(exist_ok=True)
+        file_path = output_dir / f"{safe_topic}_presentation.html"
+
+        # 构建幻灯片
+        slides_html = ""
+
+        for i, page in enumerate(pages):
+            page_title = page.get("title", f"第{i+1}页")
+            content_type = page.get("content_type", "text")
+            content = page.get("content", "")
+
+            if i == 0 and content_type == "text" and len(pages) > 1:
+                # 第一页作为标题页
+                slides_html += generate_slide_title(page_title, content if isinstance(content, str) else "")
+            elif content_type == "data":
+                # 数据卡片页
+                slides_html += generate_slide_data(page_title, content)
+            elif content_type == "trends":
+                # 趋势列表页
+                slides_html += generate_slide_trends(page_title, content)
+            else:
+                # 普通文本页
+                content_str = content if isinstance(content, str) else str(content)
+                slides_html += generate_slide_content(page_title, content_str)
+
+        # 使用模板生成完整 HTML
+        html = DARK_BOTANICAL_TEMPLATE.format(
+            title=topic,
+            slides=slides_html
+        )
+
+        # 保存文件
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(html)
+
+        return {
+            "success": True,
+            "html": html,
+            "file_path": str(file_path),
+            "topic": topic,
+            "style": style,
+            "page_count": len(pages)
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "html": None,
+            "file_path": None
         }
 
 

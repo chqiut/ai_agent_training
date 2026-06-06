@@ -1,3 +1,11 @@
+---
+name: frontend_design_guide
+description: 前端设计指南，生成高质量 HTML 演示文稿
+tools: [python_exec, html_generate]
+output_format: html
+styles: [Bold Signal, Dark Botanical, Neon Cyber, Terminal Green]
+---
+
 # Skill 剧本：前端设计指南 (Frontend Design Guide)
 ==============================================
 
