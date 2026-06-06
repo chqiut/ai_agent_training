@@ -193,7 +193,8 @@ SKILL_LOAD_SCHEMA = {
                     "type": "string",
                     "description": "Skill 剧本的名称（不含 .md 后缀）。\n\n"
                                  "可用 Skill：\n"
-                                 "- industry_insight：行业洞察剧本"
+                                 "- industry_insight：行业洞察剧本\n"
+                                 "- frontend_design_guide：前端设计指南剧本"
                 }
             },
             "required": ["skill_name"]
