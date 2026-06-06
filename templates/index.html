@@ -9,42 +9,43 @@
 <body>
     <div class="app-container">
         <!-- 左侧 Trace 面板 -->
-        <div class="trace-panel">
+        <aside class="trace-panel">
             <div class="panel-header">
                 <h2>Trace / 思维链</h2>
             </div>
             <div class="panel-content" id="trace-content">
                 <!-- Trace 步骤会动态添加到这里 -->
             </div>
-        </div>
+        </aside>
 
-        <!-- 右侧聊天面板 -->
-        <div class="chat-panel">
-            <div class="chat-header">
-                <h1>AI Agent Training</h1>
-                <p>基于 ReAct 架构的智能数据分析助手</p>
-                <label class="stream-toggle">
-                    <input type="checkbox" id="stream-toggle">
-                    <span>流式输出</span>
-                </label>
-            </div>
-
-            <!-- 会话信息栏 -->
-            <div class="session-info">
-                <div class="session-info-item">
-                    <span class="session-label">会话 ID:</span>
-                    <code id="conversation-id" class="session-id">-</code>
-                    <button id="copy-session-id" class="btn-copy" title="复制会话ID">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                    </button>
+        <!-- 右侧主区域 -->
+        <main class="main-panel">
+            <!-- 顶部栏 -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h1>AI Agent</h1>
+                    <span class="header-subtitle">基于 ReAct 架构的智能数据分析助手</span>
                 </div>
-            </div>
-            </div>
+                <div class="header-right">
+                    <label class="stream-toggle">
+                        <input type="checkbox" id="stream-toggle">
+                        <span>流式输出</span>
+                    </label>
+                    <div class="session-info">
+                        <span class="session-label">会话:</span>
+                        <code id="conversation-id" class="session-id">-</code>
+                        <button id="copy-session-id" class="btn-icon" title="复制会话ID">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
 
-            <div class="chat-messages" id="chat-messages">
+            <!-- 消息区域 -->
+            <div class="messages-area" id="chat-messages">
                 <div class="welcome-message">
                     <h3>欢迎使用 AI Agent</h3>
                     <p>基于 ReAct 架构的智能数据分析助手</p>
@@ -52,18 +53,21 @@
                 </div>
             </div>
 
-            <div class="input-area">
+            <!-- 底部输入框 -->
+            <footer class="input-area">
                 <div class="input-container">
                     <textarea
                         id="message-input"
                         placeholder="输入您的问题，按 Enter 发送..."
                         rows="1"
                     ></textarea>
-                    <button id="send-button" class="btn btn-primary">发送</button>
-                    <button id="clear-button" class="btn btn-secondary">Clear</button>
+                    <div class="input-actions">
+                        <button id="clear-button" class="btn btn-secondary">清空</button>
+                        <button id="send-button" class="btn btn-primary">发送</button>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </footer>
+        </main>
     </div>
 
     <script src="/static/js/app.js"></script>

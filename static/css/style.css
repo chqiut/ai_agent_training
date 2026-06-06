@@ -4,21 +4,10 @@
  * ==============================
  *
  * 深色主题、代码高亮、Markdown 渲染
- * 布局：左侧 Trace 区，右侧聊天区
+ * 布局：左侧 Trace 区，右侧主聊天区（消息 +底部输入）
  */
 
-/* ============================================================================
-   基础样式
-   ============================================================================ */
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 :root {
-    /* 颜色变量 - 深色主题 */
     --bg-primary: #0d1117;
     --bg-secondary: #161b22;
     --bg-tertiary: #21262d;
@@ -39,6 +28,16 @@
 
     --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
     --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    --header-height: 56px;
+    --input-height: 120px;
+    --sidebar-width: 320px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html, body {
@@ -64,8 +63,8 @@ html, body {
    ============================================================================ */
 
 .trace-panel {
-    width: 400px;
-    min-width: 300px;
+    width: var(--sidebar-width);
+    min-width: 280px;
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -73,13 +72,17 @@ html, body {
 }
 
 .panel-header {
-    padding: 16px;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-tertiary);
+    flex-shrink: 0;
 }
 
 .panel-header h2 {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -89,14 +92,14 @@ html, body {
 .panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 12px;
 }
 
 /* Trace 步骤卡片 */
 .trace-step {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
     background-color: var(--bg-primary);
 }
@@ -104,35 +107,42 @@ html, body {
 .step-header {
     display: flex;
     align-items: center;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background-color: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
+    user-select: none;
 }
 
 .step-number {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background-color: var(--accent-blue);
     color: white;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    margin-right: 10px;
+    margin-right: 8px;
+    flex-shrink: 0;
 }
 
 .step-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .step-content {
-    padding: 12px;
+    padding: 10px;
     display: none;
+    font-size: 12px;
 }
 
 .step-content.expanded {
@@ -141,142 +151,260 @@ html, body {
 
 /* Thought 样式 */
 .thought-section {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .thought-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--accent-purple);
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .thought-content {
-    font-size: 13px;
     color: var(--text-primary);
     background-color: var(--bg-tertiary);
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 4px;
     white-space: pre-wrap;
     word-break: break-word;
+    line-height: 1.5;
 }
 
 /* Tool Call 样式 */
 .tool-section {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .tool-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--accent-orange);
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .tool-call {
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
 }
 
 .tool-name {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--accent-orange);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .tool-args {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
     background-color: var(--bg-primary);
-    padding: 6px 8px;
+    padding: 4px 6px;
     border-radius: 4px;
     overflow-x: auto;
     white-space: pre-wrap;
+    max-height: 100px;
+    overflow-y: auto;
 }
 
-/* Tool Result 样式 */
 .result-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--accent-green);
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .result-content {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
     background-color: var(--bg-primary);
-    padding: 8px 10px;
+    padding: 6px 8px;
     border-radius: 4px;
-    max-height: 200px;
+    max-height: 120px;
     overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
 /* ============================================================================
-   右侧聊天面板
+   右侧主面板
    ============================================================================ */
 
-.chat-panel {
+.main-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     background-color: var(--bg-primary);
 }
 
-.chat-header {
-    padding: 16px20px;
+/* ============================================================================
+   顶部栏
+   ============================================================================ */
+
+.main-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-secondary);
+    flex-shrink: 0;
 }
 
-.chat-header h1 {
-    font-size: 18px;
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.header-left h1 {
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.chat-header p {
-    font-size: 13px;
+.header-subtitle {
+    font-size: 12px;
     color: var(--text-secondary);
-    margin-top: 4px;
 }
 
-.chat-messages {
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* 流式输出切换 */
+.stream-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.stream-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.stream-toggle span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.stream-toggle:hover span {
+    color: var(--text-primary);
+}
+
+/* 会话信息 */
+.session-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.session-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.session-id {
+    font-size: 10px;
+    color: var(--text-muted);
+    background-color: var(--bg-primary);
+    padding: 3px 6px;
+    border-radius: 4px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+}
+
+.btn-icon.copied {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+/* ============================================================================
+   消息区域
+   ============================================================================ */
+
+.messages-area {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px 32px;
+}
+
+/* 欢迎消息 */
+.welcome-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.welcome-message h3 {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.welcome-message p {
+    font-size: 14px;
+    margin-bottom: 8px;
 }
 
 /* 消息样式 */
 .message {
-    margin-bottom: 20px;
-    max-width: 80%;
+    max-width: 720px;
+    margin: 0 auto 20px;
 }
 
 .message.user {
-    margin-left: auto;
+    text-align: right;
 }
 
 .message.assistant {
-    margin-right: auto;
+    text-align: left;
 }
 
 .message-content {
+    display: inline-block;
     padding: 12px 16px;
     border-radius: 12px;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    text-align: left;
 }
 
 .message.user .message-content {
@@ -292,38 +420,23 @@ html, body {
     border-bottom-left-radius: 4px;
 }
 
-/* 欢迎消息 */
-.welcome-message {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-secondary);
-}
-
-.welcome-message h3 {
-    font-size: 20px;
-    color: var(--text-primary);
-    margin-bottom: 12px;
-}
-
-.welcome-message p {
-    font-size: 14px;
-    margin-bottom: 8px;
-}
-
 /* ============================================================================
-   输入区域
+   底部输入区
    ============================================================================ */
 
 .input-area {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border-color);
+    padding: 16px 24px 20px;
     background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .input-container {
+    max-width: 800px;
+    margin: 0 auto;
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: flex-end;
 }
 
 #message-input {
@@ -331,13 +444,16 @@ html, body {
     padding: 12px 16px;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     color: var(--text-primary);
     font-size: 14px;
     font-family: var(--font-sans);
     resize: none;
     outline: none;
     transition: border-color 0.2s;
+    min-height: 44px;
+    max-height: 200px;
+    line-height: 1.5;
 }
 
 #message-input:focus {
@@ -348,15 +464,21 @@ html, body {
     color: var(--text-muted);
 }
 
+.input-actions {
+    display: flex;
+    gap: 8px;
+}
+
 /* 按钮样式 */
 .btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all0.2s;
+    transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -475,112 +597,9 @@ html, body {
 }
 
 /* ============================================================================
-   响应式
+   打字效果
    ============================================================================ */
 
-@media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-    }
-
-    .trace-panel {
-        width: 100%;
-        height: 40%;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .chat-panel {
-        height: 60%;
-    }
-}
-
-/* ============================================================================
-   流式输出切换
-   ============================================================================ */
-
-.stream-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    cursor: pointer;
-}
-
-.stream-toggle input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.stream-toggle span {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.stream-toggle:hover span {
-    color: var(--text-primary);
-}
-
-/* ============================================================================
-   会话信息栏
-   ============================================================================ */
-
-.session-info {
-    padding: 8px 20px;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--bg-tertiary);
-}
-
-.session-info-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.session-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.session-id {
-    font-size: 11px;
-    color: var(--text-muted);
-    background-color: var(--bg-primary);
-    padding: 4px 8px;
-    border-radius: 4px;
-    max-width: 280px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.btn-copy {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-copy:hover {
-    background-color: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--accent-blue);
-}
-
-.btn-copy.copied {
-    color: var(--accent-green);
-    border-color: var(--accent-green);
-}
-
-/* 打字效果 */
 .thought-content.streaming {
     border-left: 3px solid var(--accent-blue);
     animation: pulse 1.5s infinite;
@@ -597,7 +616,7 @@ html, body {
 
 .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: 140px;
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--accent-green);
@@ -617,5 +636,31 @@ html, body {
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ============================================================================
+   响应式
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .trace-panel {
+        display: none;
+    }
+
+    .header-subtitle {
+        display: none;
+    }
+
+    .messages-area {
+        padding: 16px;
+    }
+
+    .input-area {
+        padding: 12px 16px 16px;
+    }
+
+    .btn {
+        padding: 10px 16px;
     }
 }
