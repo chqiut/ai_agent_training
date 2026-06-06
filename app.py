@@ -11,7 +11,7 @@ FastAPI Web 入口：app.py
 
 使用方法：
     uvicorn app:app --reload
-    访问 http://localhost:8000
+    访问 http://localhost:8001
 """
 
 import os
