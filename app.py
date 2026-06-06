@@ -208,8 +208,7 @@ async def chat_stream(message: str, conversation_id: str = None):
     import json
 
     if not message.strip():
-        yield f"data: {json.dumps({'type': 'error', 'content': '消息不能为空'}, ensure_ascii=False)}\n\n"
-        return
+        raise HTTPException(status_code=400, detail="消息不能为空")
 
     async def event_generator():
         """SSE 事件生成器"""
