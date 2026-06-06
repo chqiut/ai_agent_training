@@ -390,8 +390,18 @@ async function sendMessageStream(message) {
                                 </div>
                                 <div class="step-content expanded">
                                     <div class="thought-section">
-                                        <div class="thought-label">执行中...</div>
-                                        <div class="thought-content streaming"></div>
+                                        <div class="thought-label">思考中</div>
+                                        <div class="thought-content"></div>
+                                    </div>
+                                    <div class="tool-call-section" style="display:none;">
+                                        <div class="tool-label">行动</div>
+                                        <div class="tool-name"></div>
+                                    </div>
+                                    <div class="result-section" style="display:none;">
+                                        <div class="tool-section">
+                                            <div class="result-label">观察结果</div>
+                                            <div class="result-content"></div>
+                                        </div>
                                     </div>
                                 </div>
                             `;
@@ -403,7 +413,7 @@ async function sendMessageStream(message) {
                             // 思考内容
                             if (currentStepDiv) {
                                 const header = currentStepDiv.querySelector('.step-header .step-title');
-                                header.textContent = '思考中...';
+                                header.textContent = '思考中';
                                 const label = currentStepDiv.querySelector('.thought-label');
                                 if (label) label.textContent = '思考中';
                                 if (thoughtSection) {
@@ -417,8 +427,32 @@ async function sendMessageStream(message) {
                             if (currentStepDiv) {
                                 const header = currentStepDiv.querySelector('.step-header .step-title');
                                 header.textContent = content;
-                                const label = currentStepDiv.querySelector('.thought-label');
-                                if (label) label.textContent = '工具调用';
+
+                                // 显示工具调用区域
+                                const toolCallSection = currentStepDiv.querySelector('.tool-call-section');
+                                if (toolCallSection) {
+                                    toolCallSection.style.display = 'block';
+                                    const toolName = toolCallSection.querySelector('.tool-name');
+                                    if (toolName) toolName.textContent = content;
+                                }
+                            }
+                            break;
+
+                        case 'tool_result':
+                            // 工具执行结果（观察阶段）
+                            if (currentStepDiv) {
+                                const header = currentStepDiv.querySelector('.step-header .step-title');
+                                header.textContent = '观察结果';
+
+                                // 显示结果区域
+                                const resultSection = currentStepDiv.querySelector('.result-section');
+                                if (resultSection) {
+                                    resultSection.style.display = 'block';
+                                    const resultContent = resultSection.querySelector('.result-content');
+                                    if (resultContent) {
+                                        resultContent.textContent = content;
+                                    }
+                                }
                             }
                             break;
 
