@@ -33,6 +33,7 @@ import uuid
 
 from main import process, create_agent
 from core.utils import get_logger
+from core.session import get_session_manager, create_session, add_message
 
 logger = get_logger("app")
 
@@ -111,6 +112,7 @@ async def chat(request: ChatRequest):
     聊天接口
 
     接收用户消息，调用 Agent 处理，返回结果。
+    会话历史会自动保存到 SQLite 数据库。
 
     请求体：
         message: 用户消息
@@ -125,15 +127,37 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=400, detail="消息不能为空")
 
     try:
-        conversation_id = request.conversation_id or str(uuid.uuid4())
+        # 获取会话管理器
+        session_mgr = get_session_manager()
 
-        # 如果有 conversation_id，尝试使用已有的 Agent
-        if request.conversation_id and request.conversation_id in active_agents:
-            agent = active_agents[request.conversation_id]
+        # 如果有 conversation_id，先获取会话历史
+        if request.conversation_id:
+            existing_session = session_mgr.get_session(request.conversation_id)
+            if existing_session:
+                # 恢复会话历史到 Agent memory
+                agent = create_agent()
+                for msg in existing_session.messages:
+                    agent.memory.add_message(msg["role"], msg["content"])
+                conversation_id = request.conversation_id
+            else:
+                # 会话不存在，创建新会话
+                session = session_mgr.create_session()
+                conversation_id = session.id
+                agent = create_agent()
         else:
-            # 创建新的 Agent
+            # 创建新会话
+            session = session_mgr.create_session()
+            conversation_id = session.id
             agent = create_agent()
+
+        # 保存用户消息到会话
+        session_mgr.add_message(conversation_id, "user", request.message)
+
+        # 调用 Agent 处理
         response, trace = agent.run(request.message)
+
+        # 保存助手回复到会话
+        session_mgr.add_message(conversation_id, "assistant", response)
 
         # 序列化 trace
         trace_dict = None
@@ -156,7 +180,7 @@ async def chat(request: ChatRequest):
 
         return ChatResponse(
             response=response,
-            conversation_id=request.conversation_id or conversation_id,
+            conversation_id=conversation_id,
             trace=trace_dict
         )
 
@@ -231,7 +255,7 @@ async def clear(request: ClearRequest):
     """
     清空会话接口
 
-    清除指定会话的 Agent 实例。
+    清除指定会话的 Agent 实例和数据库记录。
 
     请求体：
         conversation_id: 会话 ID（可选）
@@ -241,8 +265,14 @@ async def clear(request: ClearRequest):
         message: 消息
     """
     try:
+        # 从内存中删除
         if request.conversation_id and request.conversation_id in active_agents:
             del active_agents[request.conversation_id]
+
+        # 从数据库中删除
+        if request.conversation_id:
+            session_mgr = get_session_manager()
+            session_mgr.delete_session(request.conversation_id)
 
         return ClearResponse(
             success=True,
