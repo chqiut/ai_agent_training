@@ -555,6 +555,13 @@ class AgentRuntime:
             # Observe
             tool_results = self.dispatcher.dispatch_from_llm_response(assistant_message)
 
+            # 首先添加助手消息（包含 tool_calls）
+            messages.append(Message(
+                "assistant",
+                assistant_message.get("content", "") or "",
+                tool_calls_json=json.dumps(tool_calls)
+            ))
+
             for call, result in zip(tool_calls, tool_results):
                 tool_name = call["function"]["name"]
                 call_id = call.get("id", "")
