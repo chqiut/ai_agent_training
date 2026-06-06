@@ -66,6 +66,23 @@ function clearStoredConversationId() {
  * 简单的 Markdown 渲染器
  * 支持：标题、代码、列表、粗体、斜体
  */
+
+/**
+ * 加载会话历史
+ */
+async function loadConversationHistory(convId) {
+    try {
+        const response = await fetch(`${API_BASE}/chat/history?conversation_id=${convId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        return data.messages || [];
+    } catch (error) {
+        console.error('加载会话历史失败:', error);
+        return [];
+    }
+}
 function renderMarkdown(text) {
     if (!text) return '';
 
@@ -576,10 +593,35 @@ function init() {
     if (storedConvId) {
         conversationId = storedConvId;
         updateConversationIdDisplay(conversationId);
-    }
 
-    // 显示欢迎消息
-    clearUI();
+        // 加载并显示历史消息
+        loadAndDisplayHistory(conversationId);
+    } else {
+        // 显示欢迎消息
+        clearUI();
+    }
+}
+
+/**
+ * 加载并显示历史消息
+ */
+async function loadAndDisplayHistory(convId) {
+    const messages = await loadConversationHistory(convId);
+
+    if (messages.length > 0) {
+        // 清空欢迎消息
+        chatMessages.innerHTML = '';
+
+        // 逐条显示历史消息
+        for (const msg of messages) {
+            addMessage(msg.role, msg.content);
+        }
+
+        // 清空 Trace
+        traceContent.innerHTML = '';
+    } else {
+        clearUI();
+    }
 }
 
 // 页面加载完成后初始化

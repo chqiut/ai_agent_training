@@ -287,6 +287,27 @@ async def clear(request: ClearRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/chat/history")
+async def get_chat_history(conversation_id: str):
+    """
+    获取会话历史
+
+    查询参数：
+        conversation_id: 会话 ID
+
+    响应：
+        messages: 消息列表
+    """
+    try:
+        session_mgr = get_session_manager()
+        messages = session_mgr.get_conversation_context(conversation_id, max_messages=100)
+        return {"messages": messages}
+
+    except Exception as e:
+        logger.error(f"获取会话历史错误: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/health")
 async def health():
     """健康检查"""
