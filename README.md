@@ -181,16 +181,29 @@ Observe: 获取工具结果
 | `/` | GET | API 信息 |
 | `/index` | GET | Web 界面 |
 | `/chat` | POST | 聊天接口 |
+| `/chat/stream` | POST | 流式聊天接口（SSE） |
 | `/clear` | POST | 清空会话 |
 | `/health` | GET | 健康检查 |
 
-###聊天接口示例
+### 聊天接口示例
 
 ```bash
-curl -X POST http://localhost:8000/chat \
+# 普通模式
+curl -X POST http://localhost:8001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "分析本月销售额"}'
+
+# 流式模式（SSE）
+curl -N -X POST http://localhost:8001/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"message": "分析本月销售额"}'
 ```
+
+### Web 界面功能
+
+- **流式输出**：勾选"流式输出"开关，实时显示 Agent思考过程
+- **Trace 面板**：左侧显示 ReAct 执行轨迹（思考、工具调用、结果）
+- **Markdown 渲染**：支持代码高亮、列表、粗体等格式
 
 ## 教学重点
 
