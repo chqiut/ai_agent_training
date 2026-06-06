@@ -32,6 +32,8 @@ const sendButton = document.getElementById('send-button');
 const chatMessages = document.getElementById('chat-messages');
 const traceContent = document.getElementById('trace-content');
 const clearButton = document.getElementById('clear-button');
+const conversationIdDisplay = document.getElementById('conversation-id');
+const copySessionIdBtn = document.getElementById('copy-session-id');
 
 // ============================================================================
 // 工具函数
@@ -88,6 +90,43 @@ function addMessage(role, content) {
     messageDiv.innerHTML = `<div class="message-content">${renderMarkdown(content)}</div>`;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * 更新会话 ID 显示
+ */
+function updateConversationIdDisplay(convId) {
+    if (convId && conversationIdDisplay) {
+        conversationIdDisplay.textContent = convId;
+        conversationIdDisplay.title = convId;
+    }
+}
+
+/**
+ * 复制会话 ID 到剪贴板
+ */
+async function copySessionId() {
+    if (!conversationId) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(conversationId);
+        copySessionIdBtn.classList.add('copied');
+
+        // 显示提示
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = '已复制会话 ID';
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+            copySessionIdBtn.classList.remove('copied');
+        }, 1500);
+    } catch (err) {
+        console.error('复制失败:', err);
+    }
 }
 
 /**
@@ -227,6 +266,7 @@ function clearUI() {
         </div>
     `;
     traceContent.innerHTML = '';
+    updateConversationIdDisplay(null);
 }
 
 // ============================================================================
@@ -339,6 +379,7 @@ async function sendMessageStream(message) {
                     case 'done':
                         // 完成
                         conversationId = data.conversation_id;
+                        updateConversationIdDisplay(conversationId);
                         break;
 
                     case 'error':
@@ -407,6 +448,7 @@ async function handleSend() {
             // 保存 conversation_id
             if (data.conversation_id) {
                 conversationId = data.conversation_id;
+                updateConversationIdDisplay(conversationId);
             }
 
             // 添加助手消息
@@ -427,6 +469,13 @@ async function handleSend() {
     } finally {
         hideLoading();
     }
+}
+
+/**
+ * 处理复制会话 ID 按钮点击
+ */
+async function handleCopySessionId() {
+    await copySessionId();
 }
 
 /**
@@ -470,6 +519,7 @@ function init() {
     sendButton.addEventListener('click', handleSend);
     messageInput.addEventListener('keypress', handleKeyPress);
     clearButton.addEventListener('click', handleClear);
+    copySessionIdBtn.addEventListener('click', handleCopySessionId);
 
     // 自动聚焦输入框
     messageInput.focus();

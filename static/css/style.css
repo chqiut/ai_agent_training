@@ -522,6 +522,64 @@ html, body {
     color: var(--text-primary);
 }
 
+/* ============================================================================
+   会话信息栏
+   ============================================================================ */
+
+.session-info {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-tertiary);
+}
+
+.session-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.session-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.session-id {
+    font-size: 11px;
+    color: var(--text-muted);
+    background-color: var(--bg-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+}
+
+.btn-copy.copied {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
 /* 打字效果 */
 .thought-content.streaming {
     border-left: 3px solid var(--accent-blue);
@@ -531,4 +589,33 @@ html, body {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+}
+
+/* ============================================================================
+   Toast 提示
+   ============================================================================ */
+
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--accent-green);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
+    animation: toastIn 0.3s ease;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
