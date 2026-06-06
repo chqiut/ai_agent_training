@@ -304,106 +304,113 @@ async function sendMessage(message) {
 
 /**
  * 发送消息到后端（流式 SSE）
+ * 使用 fetch + ReadableStream 替代 EventSource（EventSource 不支持 POST）
  */
 async function sendMessageStream(message) {
-    return new Promise((resolve, reject) => {
-        const eventSource = new EventSource(`${API_BASE}/chat/stream`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: message,
-                conversation_id: conversationId
-            })
-        });
+    try {
+        const response = await fetch(`${API_BASE}/chat/stream?message=${encodeURIComponent(message)}&conversation_id=${conversationId || ''}`);
 
-        let responseText = '';
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
         let currentStepDiv = null;
         let thoughtSection = null;
+        let finalResponse = '';
+        let finalConversationId = null;
 
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                const type = data.type;
-                const content = data.content || '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-                switch (type) {
-                    case 'step':
-                        // 开始新步骤
-                        currentStepDiv = document.createElement('div');
-                        currentStepDiv.className = 'trace-step';
-                        currentStepDiv.innerHTML = `
-                            <div class="step-header">
-                                <span class="step-number">${data.step}</span>
-                                <span class="step-title">步骤 ${data.step}</span>
-                            </div>
-                            <div class="step-content expanded">
-                                <div class="thought-section">
-                                    <div class="thought-label">执行中...</div>
-                                   <div class="thought-content streaming"></div>
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+
+                try {
+                    const data = JSON.parse(line.slice(6));
+                    const type = data.type;
+                    const content = data.content || '';
+
+                    switch (type) {
+                        case 'step':
+                            // 开始新步骤
+                            currentStepDiv = document.createElement('div');
+                            currentStepDiv.className = 'trace-step';
+                            currentStepDiv.innerHTML = `
+                                <div class="step-header">
+                                    <span class="step-number">${data.step}</span>
+                                    <span class="step-title">步骤 ${data.step}</span>
                                 </div>
-                            </div>
-                        `;
-                        traceContent.appendChild(currentStepDiv);
-                        thoughtSection = currentStepDiv.querySelector('.thought-content');
-                        break;
+                                <div class="step-content expanded">
+                                    <div class="thought-section">
+                                        <div class="thought-label">执行中...</div>
+                                        <div class="thought-content streaming"></div>
+                                    </div>
+                                </div>
+                            `;
+                            traceContent.appendChild(currentStepDiv);
+                            thoughtSection = currentStepDiv.querySelector('.thought-content');
+                            break;
 
-                    case 'thought':
-                        // 思考内容
-                        if (currentStepDiv) {
-                            const header = currentStepDiv.querySelector('.step-header .step-title');
-                            header.textContent = '思考中...';
+                        case 'thought':
+                            // 思考内容
+                            if (currentStepDiv) {
+                                const header = currentStepDiv.querySelector('.step-header .step-title');
+                                header.textContent = '思考中...';
+                                if (thoughtSection) {
+                                    thoughtSection.textContent = content;
+                                }
+                            }
+                            break;
+
+                        case 'tool':
+                            // 工具调用
+                            if (currentStepDiv) {
+                                const header = currentStepDiv.querySelector('.step-header .step-title');
+                                header.textContent = content;
+                            }
+                            break;
+
+                        case 'final':
+                            // 最终回复
+                            finalResponse = content;
                             if (thoughtSection) {
                                 thoughtSection.textContent = content;
                             }
-                        }
-                        break;
+                            break;
 
-                    case 'tool':
-                        // 工具调用
-                        if (currentStepDiv) {
-                            const header = currentStepDiv.querySelector('.step-header .step-title');
-                            header.textContent = content;
-                        }
-                        break;
+                        case 'done':
+                            // 完成
+                            finalConversationId = data.conversation_id;
+                            break;
 
-                    case 'final':
-                        // 最终回复
-                        if (thoughtSection) {
-                            thoughtSection.textContent = content;
-                        }
-                        resolve({ response: content, conversation_id: data.conversation_id });
-                        break;
+                        case 'error':
+                            // 错误
+                            throw new Error(content);
 
-                    case 'done':
-                        // 完成
-                        conversationId = data.conversation_id;
-                        updateConversationIdDisplay(conversationId);
-                        break;
-
-                    case 'error':
-                        // 错误
-                        eventSource.close();
-                        reject(new Error(content));
-                        break;
-
-                    case 'close':
-                        // 关闭
-                        eventSource.close();
-                        break;
+                        case 'close':
+                            // 关闭
+                            break;
+                    }
+                } catch (e) {
+                    if (e.message) throw e;
                 }
-            } catch (e) {
-                console.error('SSE 解析错误:', e);
             }
-        };
+        }
 
-        eventSource.onerror = (error) => {
-            console.error('SSE 错误:', error);
-            eventSource.close();
-            reject(error);
-        };
-    });
+        return { response: finalResponse, conversation_id: finalConversationId };
+
+    } catch (error) {
+        console.error('流式请求失败:', error);
+        throw error;
+    }
 }
 
 // ============================================================================
@@ -436,6 +443,12 @@ async function handleSend() {
         if (document.getElementById('stream-toggle') && document.getElementById('stream-toggle').checked) {
             // 流式模式
             const data = await sendMessageStream(message);
+
+            // 保存 conversation_id
+            if (data.conversation_id) {
+                conversationId = data.conversation_id;
+                updateConversationIdDisplay(conversationId);
+            }
 
             // 添加助手消息
             if (data.response) {

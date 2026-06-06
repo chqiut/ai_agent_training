@@ -189,34 +189,38 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/chat/stream")
-async def chat_stream(request: ChatRequest):
+@app.get("/chat/stream")
+async def chat_stream(message: str, conversation_id: str = None):
     """
     流式聊天接口（SSE）
 
     使用 Server-Sent Events 流式返回 Agent 的响应，
     实现打字机效果。
 
-    请求体：
+    查询参数：
         message: 用户消息
         conversation_id: 会话 ID（可选）
 
-   响应：
+    响应：
         SSE 流，包含 text事件
     """
     from fastapi.responses import StreamingResponse
     import json
 
+    if not message.strip():
+        yield f"data: {json.dumps({'type': 'error', 'content': '消息不能为空'}, ensure_ascii=False)}\n\n"
+        return
+
     async def event_generator():
         """SSE 事件生成器"""
         try:
-            conversation_id = request.conversation_id or str(uuid.uuid4())
+            conv_id = conversation_id or str(uuid.uuid4())
 
             # 创建 Agent
             agent = create_agent()
 
             # 使用流式方法
-            for event in agent.run_stream(request.message):
+            for event in agent.run_stream(message):
                 # event 格式: {"type": "step_start"/"thought"/"tool_call"/"final", "content": "..."}
                 event_type = event.get("type", "")
                 content = event.get("content", "")
@@ -225,7 +229,7 @@ async def chat_stream(request: ChatRequest):
                 if event_type == "final":
                     # 最终回复
                     yield f"data: {json.dumps({'type': 'final', 'content': content}, ensure_ascii=False)}\n\n"
-                    yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'conversation_id': conv_id}, ensure_ascii=False)}\n\n"
                 elif event_type == "thought":
                     yield f"data: {json.dumps({'type': 'thought', 'content': content}, ensure_ascii=False)}\n\n"
                 elif event_type == "tool_call":
