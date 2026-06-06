@@ -155,8 +155,8 @@ def web_search(query: str) -> dict[str, Any]:
         - error: 错误信息
     """
     try:
-        # 使用 DuckDuckGo 搜索（免费，无需 API Key）
-        from duckduckgo_search import DDGS
+        # 使用 ddgs（DuckDuckGo 搜索的新包名）
+        from ddgs import DDGS
 
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=5))
@@ -178,7 +178,7 @@ def web_search(query: str) -> dict[str, Any]:
     except ImportError:
         return {
             "success": False,
-            "error": "需要安装 duckduckgo-search: pip install duckduckgo-search",
+            "error": "需要安装 ddgs: pip install ddgs",
             "results": []
         }
     except Exception as e:

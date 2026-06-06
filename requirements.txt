@@ -26,7 +26,7 @@ sentence-transformers
 
 # 搜索
 serpapi
-duckduckgo-search
+ddgs
 
 # 测试
 pytest
