@@ -40,6 +40,29 @@ const copySessionIdBtn = document.getElementById('copy-session-id');
 // ============================================================================
 
 /**
+ * 保存 conversationId 到 localStorage
+ */
+function saveConversationId(convId) {
+    if (convId) {
+        localStorage.setItem('ai_agent_conv_id', convId);
+    }
+}
+
+/**
+ * 从 localStorage 加载 conversationId
+ */
+function loadConversationId() {
+    return localStorage.getItem('ai_agent_conv_id');
+}
+
+/**
+ * 清除 localStorage 中的 conversationId
+ */
+function clearStoredConversationId() {
+    localStorage.removeItem('ai_agent_conv_id');
+}
+
+/**
  * 简单的 Markdown 渲染器
  * 支持：标题、代码、列表、粗体、斜体
  */
@@ -455,6 +478,7 @@ async function handleSend() {
             // 保存 conversation_id
             if (data.conversation_id) {
                 conversationId = data.conversation_id;
+                saveConversationId(conversationId);
                 updateConversationIdDisplay(conversationId);
             }
 
@@ -469,6 +493,7 @@ async function handleSend() {
             // 保存 conversation_id
             if (data.conversation_id) {
                 conversationId = data.conversation_id;
+                saveConversationId(conversationId);
                 updateConversationIdDisplay(conversationId);
             }
 
@@ -528,6 +553,7 @@ async function handleClear() {
     }
 
     conversationId = null;
+    clearStoredConversationId();
     clearUI();
 }
 
@@ -544,6 +570,13 @@ function init() {
 
     // 自动聚焦输入框
     messageInput.focus();
+
+    // 从 localStorage 恢复会话 ID
+    const storedConvId = loadConversationId();
+    if (storedConvId) {
+        conversationId = storedConvId;
+        updateConversationIdDisplay(conversationId);
+    }
 
     // 显示欢迎消息
     clearUI();
