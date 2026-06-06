@@ -364,6 +364,8 @@ async function sendMessageStream(message) {
                             if (currentStepDiv) {
                                 const header = currentStepDiv.querySelector('.step-header .step-title');
                                 header.textContent = '思考中...';
+                                const label = currentStepDiv.querySelector('.thought-label');
+                                if (label) label.textContent = '思考中';
                                 if (thoughtSection) {
                                     thoughtSection.textContent = content;
                                 }
@@ -375,12 +377,18 @@ async function sendMessageStream(message) {
                             if (currentStepDiv) {
                                 const header = currentStepDiv.querySelector('.step-header .step-title');
                                 header.textContent = content;
+                                const label = currentStepDiv.querySelector('.thought-label');
+                                if (label) label.textContent = '工具调用';
                             }
                             break;
 
                         case 'final':
                             // 最终回复
                             finalResponse = content;
+                            if (currentStepDiv) {
+                                const label = currentStepDiv.querySelector('.thought-label');
+                                if (label) label.textContent = '最终回复';
+                            }
                             if (thoughtSection) {
                                 thoughtSection.textContent = content;
                             }
