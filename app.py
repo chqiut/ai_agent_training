@@ -232,7 +232,11 @@ async def chat_stream(message: str, conversation_id: str = None):
                 elif event_type == "thought":
                     yield f"data: {json.dumps({'type': 'thought', 'content': content}, ensure_ascii=False)}\n\n"
                 elif event_type == "tool_call":
-                    yield f"data: {json.dumps({'type': 'tool', 'content': content}, ensure_ascii=False)}\n\n"
+                    yield f"data: {json.dumps({'type': 'tool_call', 'content': content}, ensure_ascii=False)}\n\n"
+                elif event_type == "tool_result":
+                    #工具执行结果
+                    tool = event.get("tool", "")
+                    yield f"data: {json.dumps({'type': 'tool_result', 'step': step, 'tool': tool, 'content': content}, ensure_ascii=False)}\n\n"
                 elif event_type == "step_start":
                     yield f"data: {json.dumps({'type': 'step', 'step': step, 'content': content}, ensure_ascii=False)}\n\n"
 
