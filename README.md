@@ -183,6 +183,10 @@ Observe: 获取工具结果
 - `rag_retrieve`: 向量数据库检索
 - `skill_load`: 加载 Skill 剧本（支持 YAML frontmatter 元数据）
 - `html_generate`: 生成 HTML 演示文稿（支持 text/data/trends 三种页面类型）
+- `file_read`: 读取本地文件（安全约束：仅项目目录内，最大 1MB）
+- `file_write`: 写入本地文件（安全约束：禁止写入可执行文件）
+- `http_request`: 发送 HTTP GET/POST 请求（超时 30 秒）
+- `markdown_render`: 将 Markdown 渲染为 HTML（支持 github/dark/code 样式）
 
 ## API 接口
 
