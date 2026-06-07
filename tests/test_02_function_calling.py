@@ -24,6 +24,10 @@ from core.tool_schemas import (
     WEB_SEARCH_SCHEMA,
     PYTHON_EXEC_SCHEMA,
     RAG_RETRIEVE_SCHEMA,
+    FILE_READ_SCHEMA,
+    FILE_WRITE_SCHEMA,
+    HTTP_REQUEST_SCHEMA,
+    MARKDOWN_RENDER_SCHEMA,
     get_tool_schema,
     get_all_tool_names
 )
@@ -35,7 +39,7 @@ class TestToolSchemas:
     def test_all_schemas_exist(self):
         """测试所有 Schema 都已定义"""
         assert len(ALL_TOOL_SCHEMAS) > 0
-        assert len(ALL_TOOL_SCHEMAS) == 6
+        assert len(ALL_TOOL_SCHEMAS) == 10  # 6 original + 4 new
 
     def test_duckdb_schema(self):
         """测试 DuckDB Schema"""
@@ -100,6 +104,52 @@ class TestToolSchemas:
         assert "python_exec" in names
         assert "rag_retrieve" in names
         assert "skill_load" in names
+        assert "file_read" in names
+        assert "file_write" in names
+        assert "http_request" in names
+        assert "markdown_render" in names
+
+    def test_file_read_schema(self):
+        """测试文件读取 Schema"""
+        schema = FILE_READ_SCHEMA
+        func = schema["function"]
+
+        assert func["name"] == "file_read"
+        params = func["parameters"]
+        assert "file_path" in params["properties"]
+        assert "encoding" in params["properties"]
+
+    def test_file_write_schema(self):
+        """测试文件写入 Schema"""
+        schema = FILE_WRITE_SCHEMA
+        func = schema["function"]
+
+        assert func["name"] == "file_write"
+        params = func["parameters"]
+        assert "file_path" in params["properties"]
+        assert "content" in params["properties"]
+        assert "content" in params["required"]
+
+    def test_http_request_schema(self):
+        """测试 HTTP 请求 Schema"""
+        schema = HTTP_REQUEST_SCHEMA
+        func = schema["function"]
+
+        assert func["name"] == "http_request"
+        params = func["parameters"]
+        assert "url" in params["properties"]
+        assert "method" in params["properties"]
+        assert params["properties"]["method"]["enum"] == ["GET", "POST"]
+
+    def test_markdown_render_schema(self):
+        """测试 Markdown 渲染 Schema"""
+        schema = MARKDOWN_RENDER_SCHEMA
+        func = schema["function"]
+
+        assert func["name"] == "markdown_render"
+        params = func["parameters"]
+        assert "content" in params["properties"]
+        assert "style" in params["properties"]
 
 
 class TestToolSchemasCompatibility:
@@ -114,6 +164,119 @@ class TestToolSchemasCompatibility:
 
         for name in schema_names:
             assert name in registry_names, f"Schema {name} not in registry"
+
+
+class TestFileReadTool:
+    """测试 file_read 工具"""
+
+    def test_file_read_readme(self):
+        """测试读取 README.md"""
+        from core.tools import file_read
+
+        result = file_read("README.md")
+        assert result["success"] is True
+        assert result["content"] is not None
+        assert len(result["content"]) > 0
+
+    def test_file_read_nonexistent(self):
+        """测试读取不存在的文件"""
+        from core.tools import file_read
+
+        result = file_read("nonexistent_file_12345.md")
+        assert result["success"] is False
+        assert "error" in result
+
+    def test_file_read_outside_project(self):
+        """测试读取项目外部文件（安全检查）"""
+        from core.tools import file_read
+
+        # 尝试读取项目外部的文件
+        result = file_read("../etc/passwd")
+        assert result["success"] is False
+
+
+class TestFileWriteTool:
+    """测试 file_write 工具"""
+
+    def test_file_write_create(self):
+        """测试创建新文件"""
+        from core.tools import file_write
+
+        result = file_write("test_output.txt", "Hello, World!")
+        assert result["success"] is True
+        assert result["file_path"] == "test_output.txt"
+
+        # 验证文件确实被创建
+        from core.tools import file_read
+        read_result = file_read("test_output.txt")
+        assert read_result["success"] is True
+        assert read_result["content"] == "Hello, World!"
+
+    def test_file_write_forbidden_extension(self):
+        """测试禁止写入可执行文件"""
+        from core.tools import file_write
+
+        result = file_write("test_script.py", "print('hello')")
+        assert result["success"] is False
+        assert "禁止写入" in result["error"]
+
+    def test_file_write_outside_project(self):
+        """测试写入项目外部（安全检查）"""
+        from core.tools import file_write
+
+        result = file_write("../etc/test.txt", "test")
+        assert result["success"] is False
+
+
+class TestHttpRequestTool:
+    """测试 http_request 工具"""
+
+    def test_http_request_get(self):
+        """测试 HTTP GET 请求"""
+        from core.tools import http_request
+
+        result = http_request("https://httpbin.org/get", method="GET")
+        assert result["success"] is True
+        assert result["status_code"] == 200
+        assert "body" in result
+
+    def test_http_request_invalid_url(self):
+        """测试无效 URL"""
+        from core.tools import http_request
+
+        result = http_request("ftp://invalid-url.com")
+        assert result["success"] is False
+
+
+class TestMarkdownRenderTool:
+    """测试 markdown_render 工具"""
+
+    def test_markdown_render_basic(self):
+        """测试基本 Markdown 渲染"""
+        from core.tools import markdown_render
+
+        result = markdown_render("# Hello\n\nThis is a test.")
+        assert result["success"] is True
+        assert "<h1>" in result["html"]
+        assert "Hello" in result["html"]
+
+    def test_markdown_render_with_style(self):
+        """测试带样式的渲染"""
+        from core.tools import markdown_render
+
+        result = markdown_render("## Title", style="dark")
+        assert result["success"] is True
+        assert result["style"] == "dark"
+
+    def test_markdown_render_code(self):
+        """测试代码块渲染"""
+        from core.tools import markdown_render
+
+        md_content = "```python\nprint('hello')\n```"
+        result = markdown_render(md_content)
+        assert result["success"] is True
+        assert "<pre>" in result["html"]
+        assert "<code " in result["html"]  # Note: check for "<code " not "<code>" since attributes follow
 
 
 if __name__ == "__main__":

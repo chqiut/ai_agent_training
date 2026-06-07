@@ -401,6 +401,161 @@ def skill_load(skill_name: str) -> dict[str, Any]:
         }
 
 
+# =============================================================================
+# 文件操作工具
+# =============================================================================
+
+# 禁止写入的可执行文件扩展名
+FORBIDDEN_EXTENSIONS = {'.exe', '.py', '.sh', '.bat', '.cmd', '.ps1', '.js', '.ts'}
+
+# 项目根目录
+PROJECT_ROOT = Path(__file__).parent.parent
+
+
+def _validate_file_path(file_path: str, allow_write: bool = False) -> tuple[bool, str]:
+    """
+    验证文件路径的安全性
+
+    Args:
+        file_path: 文件路径
+        allow_write: 是否允许写入
+
+    Returns:
+        (是否安全, 错误信息)
+    """
+    try:
+        # 解析为绝对路径
+        abs_path = (PROJECT_ROOT / file_path).resolve()
+
+        # 检查是否在项目目录内
+        if not str(abs_path).startswith(str(PROJECT_ROOT.resolve())):
+            return False, f"路径必须在项目目录内: {PROJECT_ROOT}"
+
+        # 检查文件是否存在（读取时）
+        if not allow_write and not abs_path.exists():
+            return False, f"文件不存在: {file_path}"
+
+        # 检查扩展名（写入时）
+        if allow_write:
+            for ext in FORBIDDEN_EXTENSIONS:
+                if abs_path.name.lower().endswith(ext):
+                    return False, f"禁止写入可执行文件: {abs_path.name}"
+
+        return True, ""
+
+    except Exception as e:
+        return False, f"路径验证失败: {e}"
+
+
+@register_tool("file_read")
+def file_read(file_path: str, encoding: str = "utf-8") -> dict[str, Any]:
+    """
+    读取本地文件内容
+
+    Args:
+        file_path: 要读取的文件路径（相对于项目根目录）
+        encoding: 文件编码，默认为 utf-8
+
+    Returns:
+        包含读取结果的字典：
+        - success: 是否成功
+        - content: 文件内容（如果成功）
+        - error: 错误信息（如果失败）
+    """
+    try:
+        # 验证路径安全性
+        safe, error = _validate_file_path(file_path, allow_write=False)
+        if not safe:
+            return {"success": False, "error": error, "content": None}
+
+        abs_path = (PROJECT_ROOT / file_path).resolve()
+
+        # 检查文件大小（最大 1MB）
+        if abs_path.stat().st_size > 1024 * 1024:
+            return {
+                "success": False,
+                "error": f"文件太大，最大支持 1MB: {file_path}",
+                "content": None
+            }
+
+        # 读取文件内容
+        with open(abs_path, 'r', encoding=encoding) as f:
+            content = f.read()
+
+        return {
+            "success": True,
+            "content": content,
+            "file_path": file_path,
+            "size": len(content)
+        }
+
+    except UnicodeDecodeError:
+        return {
+            "success": False,
+            "error": f"文件编码错误，请尝试其他编码: {encoding}",
+            "content": None
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "content": None
+        }
+
+
+@register_tool("file_write")
+def file_write(file_path: str, content: str, encoding: str = "utf-8") -> dict[str, Any]:
+    """
+    写入内容到本地文件
+
+    Args:
+        file_path: 要写入的文件路径（相对于项目根目录）
+        content: 要写入的内容
+        encoding: 文件编码，默认为 utf-8
+
+    Returns:
+        包含写入结果的字典：
+        - success: 是否成功
+        - file_path: 写入的文件路径
+        - error: 错误信息（如果失败）
+    """
+    try:
+        # 验证路径安全性
+        safe, error = _validate_file_path(file_path, allow_write=True)
+        if not safe:
+            return {"success": False, "error": error, "file_path": None}
+
+        abs_path = (PROJECT_ROOT / file_path).resolve()
+
+        # 检查内容大小（最大 1MB）
+        if len(content.encode('utf-8')) > 1024 * 1024:
+            return {
+                "success": False,
+                "error": f"内容太大，最大支持 1MB",
+                "file_path": None
+            }
+
+        # 确保父目录存在
+        abs_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 写入文件内容
+        with open(abs_path, 'w', encoding=encoding) as f:
+            f.write(content)
+
+        return {
+            "success": True,
+            "file_path": file_path,
+            "size": len(content)
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "file_path": None
+        }
+
+
 @register_tool("html_generate")
 def html_generate(topic: str, style: str, pages: list[dict]) -> dict[str, Any]:
     """
@@ -506,6 +661,232 @@ def html_generate(topic: str, style: str, pages: list[dict]) -> dict[str, Any]:
             "error": str(e),
             "html": None,
             "file_path": None
+        }
+
+
+# =============================================================================
+# HTTP 请求工具
+# =============================================================================
+
+@register_tool("http_request")
+def http_request(url: str, method: str = "GET", headers: dict = None, body: str = None, timeout: int = 30) -> dict[str, Any]:
+    """
+    发送 HTTP 请求调用外部 API
+
+    Args:
+        url: 请求的 URL 地址
+        method: HTTP 方法（GET 或 POST），默认 GET
+        headers: 请求头字典，默认 {}
+        body: 请求体（POST 时使用），默认 None
+        timeout: 超时秒数，默认 30
+
+    Returns:
+        包含请求结果的字典：
+        - success: 是否成功
+        - status_code: HTTP 状态码
+        - headers: 响应头
+        - body: 响应体
+        - error: 错误信息（如果失败）
+    """
+    import urllib.request
+    import urllib.parse
+    import json
+
+    if headers is None:
+        headers = {}
+
+    try:
+        # 验证 URL
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme not in ('http', 'https'):
+            return {
+                "success": False,
+                "error": "仅支持 HTTP 和 HTTPS 协议",
+                "status_code": None,
+                "headers": None,
+                "body": None
+            }
+
+        # 限制超时
+        if timeout > 60:
+            timeout = 60
+
+        # 构建请求
+        req = urllib.request.Request(url, method=method.upper())
+
+        # 添加请求头
+        for key, value in headers.items():
+            req.add_header(key, value)
+
+        # 添加默认 Content-Type（如果未指定且有 body）
+        if body and 'Content-Type' not in headers:
+            req.add_header('Content-Type', 'application/json')
+
+        # 添加请求体（POST）
+        if body:
+            if isinstance(body, dict):
+                body = json.dumps(body)
+            req.data = body.encode('utf-8')
+
+        # 发送请求
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            response_body = response.read().decode('utf-8')
+            response_headers = dict(response.headers)
+
+            return {
+                "success": True,
+                "status_code": response.status,
+                "headers": response_headers,
+                "body": response_body,
+                "url": url,
+                "method": method
+            }
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8') if e.fp else ""
+        return {
+            "success": False,
+            "error": f"HTTP {e.code}: {e.reason}",
+            "status_code": e.code,
+            "headers": dict(e.headers) if e.headers else None,
+            "body": error_body,
+            "url": url,
+            "method": method
+        }
+    except urllib.error.URLError as e:
+        return {
+            "success": False,
+            "error": f"连接失败: {e.reason}",
+            "status_code": None,
+            "headers": None,
+            "body": None,
+            "url": url,
+            "method": method
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "status_code": None,
+            "headers": None,
+            "body": None,
+            "url": url,
+            "method": method
+        }
+
+
+# =============================================================================
+# Markdown 渲染工具
+# =============================================================================
+
+@register_tool("markdown_render")
+def markdown_render(content: str, style: str = "github") -> dict[str, Any]:
+    """
+    将 Markdown 内容渲染为 HTML
+
+    Args:
+        content: Markdown 内容
+        style: 样式主题（github/dark/code），默认 github
+
+    Returns:
+        包含渲染结果的字典：
+        - success: 是否成功
+        - html: 生成的 HTML 代码
+        - file_path: 保存的文件路径（可选）
+        - error: 错误信息（如果失败）
+    """
+    import re
+    from pathlib import Path
+
+    try:
+        def escape_html(text):
+            """转义 HTML 特殊字符"""
+            return (text
+                    .replace('&', '&amp;')
+                    .replace('<', '&lt;')
+                    .replace('>', '&gt;')
+                    .replace('"', '&quot;'))
+
+        def render_inline(text):
+            """渲染行内元素"""
+            # 粗体
+            text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
+            # 斜体
+            text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
+            # 行内代码
+            text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+            return text
+
+        html_parts = []
+        lines = content.split('\n')
+        in_code_block = False
+        code_lang = ""
+        code_buffer = []
+
+        for line in lines:
+            # 代码块处理
+            if line.strip().startswith('```'):
+                if not in_code_block:
+                    # 提取语言标识
+                    lang_match = re.match(r'```(\w*)', line.strip())
+                    code_lang = lang_match.group(1) if lang_match else ""
+                    in_code_block = True
+                    code_buffer = []
+                else:
+                    # 代码块结束
+                    code = '\n'.join(code_buffer)
+                    escaped_code = escape_html(code)
+                    lang_class = f' language="{code_lang}"' if code_lang else ''
+                    html_parts.append(f'<pre><code{lang_class}>{escaped_code}</code></pre>')
+                    in_code_block = False
+                    code_lang = ""
+                    code_buffer = []
+                continue
+
+            if in_code_block:
+                code_buffer.append(line)
+                continue
+
+            # 标题
+            if line.startswith('### '):
+                html_parts.append(f'<h3>{render_inline(line[4:])}</h3>')
+            elif line.startswith('## '):
+                html_parts.append(f'<h2>{render_inline(line[3:])}</h2>')
+            elif line.startswith('# '):
+                html_parts.append(f'<h1>{render_inline(line[2:])}</h1>')
+            # 列表
+            elif line.startswith('- '):
+                html_parts.append(f'<li>{render_inline(line[2:])}</li>')
+            # 分割线
+            elif line.strip() == '---':
+                html_parts.append('<hr>')
+            # 空行
+            elif line.strip() == '':
+                html_parts.append('<br>')
+            # 普通段落
+            else:
+                html_parts.append(f'<p>{render_inline(line)}</p>')
+
+        # 合并连续的 <li> 标签为 <ul>
+        html = '\n'.join(html_parts)
+        html = re.sub(r'(<li>.*?</li>\n?)+', lambda m: f'<ul>{m.group(0)}</ul>', html, flags=re.DOTALL)
+
+        # 根据样式添加不同的 CSS 类和容器
+        container_class = f"markdown-render markdown-{style}"
+
+        return {
+            "success": True,
+            "html": html,
+            "style": style,
+            "content_length": len(content)
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "html": None,
+            "style": style
         }
 
 

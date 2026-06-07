@@ -260,6 +260,154 @@ HTML_GENERATE_SCHEMA = {
     }
 }
 
+# 文件读取工具
+FILE_READ_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "file_read",
+        "description": "读取本地文件内容。\n\n"
+                     "适用场景：\n"
+                     "- 读取配置文件\n"
+                     "- 读取文档\n"
+                     "- 查看代码文件\n\n"
+                     "注意：\n"
+                     "- 只能在项目目录内读取文件\n"
+                     "- 最大文件大小 1MB\n"
+                     "- 仅支持文本文件读取",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "要读取的文件路径（相对于项目根目录）"
+                },
+                "encoding": {
+                    "type": "string",
+                    "description": "文件编码，默认为 utf-8",
+                    "default": "utf-8"
+                }
+            },
+            "required": ["file_path"]
+        }
+    }
+}
+
+# 文件写入工具
+FILE_WRITE_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "file_write",
+        "description": "写入内容到本地文件。\n\n"
+                     "适用场景：\n"
+                     "- 保存分析结果\n"
+                     "- 生成报告文件\n"
+                     "- 创建配置文件\n\n"
+                     "注意：\n"
+                     "- 只能在项目目录内写入文件\n"
+                     "- 禁止写入可执行文件（.exe, .py, .sh 等）\n"
+                     "- 最大文件大小 1MB",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "要写入的文件路径（相对于项目根目录）"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "要写入的内容"
+                },
+                "encoding": {
+                    "type": "string",
+                    "description": "文件编码，默认为 utf-8",
+                    "default": "utf-8"
+                }
+            },
+            "required": ["file_path", "content"]
+        }
+    }
+}
+
+# HTTP 请求工具
+HTTP_REQUEST_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "http_request",
+        "description": "发送 HTTP 请求调用外部 API。\n\n"
+                     "适用场景：\n"
+                     "- 获取第三方数据\n"
+                     "- 调用天气 API\n"
+                     "- 查询股票信息\n"
+                     "- 访问公开 API\n\n"
+                     "注意：\n"
+                     "- 仅支持 GET 和 POST 方法\n"
+                     "- 超时限制 30 秒\n"
+                     "- 不支持文件上传",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "请求的 URL 地址"
+                },
+                "method": {
+                    "type": "string",
+                    "enum": ["GET", "POST"],
+                    "description": "HTTP 方法",
+                    "default": "GET"
+                },
+                "headers": {
+                    "type": "object",
+                    "description": "请求头（可选）",
+                    "default": {}
+                },
+                "body": {
+                    "type": "string",
+                    "description": "请求体（仅 POST 时使用）"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "超时秒数",
+                    "default": 30
+                }
+            },
+            "required": ["url"]
+        }
+    }
+}
+
+# Markdown 渲染工具
+MARKDOWN_RENDER_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "markdown_render",
+        "description": "将 Markdown 内容渲染为 HTML。\n\n"
+                     "适用场景：\n"
+                     "- 生成可展示的 HTML\n"
+                     "- 转换文档格式\n"
+                     "- 创建富文本内容\n\n"
+                     "样式主题：\n"
+                     "- github: GitHub 风格\n"
+                     "- dark: 深色主题\n"
+                     "- code: 代码高亮主题",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "description": "Markdown 内容"
+                },
+                "style": {
+                    "type": "string",
+                    "description": "样式主题：github（默认）/ dark / code",
+                    "default": "github"
+                }
+            },
+            "required": ["content"]
+        }
+    }
+}
+
 # =============================================================================
 # 工具列表
 # =============================================================================
@@ -273,6 +421,10 @@ ALL_TOOL_SCHEMAS = [
     RAG_RETRIEVE_SCHEMA,
     SKILL_LOAD_SCHEMA,
     HTML_GENERATE_SCHEMA,
+    FILE_READ_SCHEMA,
+    FILE_WRITE_SCHEMA,
+    HTTP_REQUEST_SCHEMA,
+    MARKDOWN_RENDER_SCHEMA,
 ]
 
 
