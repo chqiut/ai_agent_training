@@ -596,6 +596,24 @@ def html_generate(topic: str, style: str, pages: list[dict]) -> dict[str, Any]:
         from pathlib import Path
         import re
 
+        # 参数验证
+        if not isinstance(pages, list):
+            return {
+                "success": False,
+                "error": f"参数 pages必须是列表类型，实际收到: {type(pages).__name__}。请确保传入正确格式的页面列表。",
+                "html": None,
+                "file_path": None
+            }
+
+        for i, page in enumerate(pages):
+            if not isinstance(page, dict):
+                return {
+                    "success": False,
+                    "error": f"pages[{i}] 必须是字典类型，实际收到: {type(page).__name__}。请确保每页内容是正确的字典格式。",
+                    "html": None,
+                    "file_path": None
+                }
+
         # 延迟导入模板
         from templates.presentations.dark_botanical import (
             DARK_BOTANICAL_TEMPLATE,

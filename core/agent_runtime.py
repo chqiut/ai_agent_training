@@ -475,11 +475,29 @@ class AgentRuntime:
 
         if step_count >= self.max_steps and not final_response:
             # 达到最大步数但没有回复，说明循环没有正常结束
-            final_response = (
-                f"已达到最大步数限制（{self.max_steps}步），"
-                "任务可能未完成。请尝试简化您的问题。"
-            )
-            self.trace.error = "达到最大步数限制"
+            #尝试再做一次 LLM 调用，基于已收集的工具结果生成回复
+            try:
+                llm_response = self.llm_client.chat(messages, tools=ALL_TOOL_SCHEMAS)
+                assistant_message = llm_response.raw_response["choices"][0]["message"]
+                last_usage = llm_response.usage
+
+                # 检查是否生成了回复
+                tool_calls = assistant_message.get("tool_calls", [])
+                if not tool_calls:
+                    final_response = assistant_message.get("content", "") or "已完成"
+                else:
+                    #仍然有工具调用，说明无法完成
+                    final_response = (
+                        f"已达到最大步数限制（{self.max_steps}步），"
+                        "任务可能未完成。请尝试简化您的问题。"
+                    )
+                    self.trace.error = "达到最大步数限制"
+            except Exception as e:
+                final_response = (
+                    f"已达到最大步数限制（{self.max_steps}步），"
+                    f"生成回复时出错：{str(e)}"
+                )
+                self.trace.error = "达到最大步数限制并发生错误"
 
         # 将最终回复加入记忆
         self.memory.add_message("assistant", final_response)
