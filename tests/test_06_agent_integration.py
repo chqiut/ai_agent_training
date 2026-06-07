@@ -57,13 +57,15 @@ class TestEndToEndFlow:
                             }
                         }]
                     }
+                    usage = {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
                 return MockResponse()
 
         agent = AgentRuntime(llm_client=MockLLM())
-        result, trace = agent.run("执行 SELECT 1")
+        result, trace, token_usage = agent.run("执行 SELECT 1")
 
         assert result is not None
         assert trace is not None
+        assert token_usage["total_tokens"] == 150
 
 
 class TestErrorHandling:

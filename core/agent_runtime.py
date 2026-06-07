@@ -337,6 +337,9 @@ class AgentRuntime:
             llm_response = self.llm_client.chat(messages, tools=ALL_TOOL_SCHEMAS)
             assistant_message = llm_response.raw_response["choices"][0]["message"]
 
+            # 记录本次 LLM 调用的 token 使用情况
+            last_usage = llm_response.usage
+
             # 提取 LLM 的思考过程
             # 注意：LLM 可能会在 content 中写出它的思考过程
             # 这个思考过程对于调试和教学非常重要
@@ -485,7 +488,7 @@ class AgentRuntime:
         self.trace.total_steps = step_count
         self.trace.completed = bool(final_response)
 
-        return final_response, self.trace
+        return final_response, self.trace, last_usage
 
     def run_stream(self, user_input: str) -> Iterator[dict]:
         """

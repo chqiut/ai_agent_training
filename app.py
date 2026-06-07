@@ -75,6 +75,7 @@ class ChatResponse(BaseModel):
     response: str
     conversation_id: str
     trace: Optional[dict] = None
+    token_usage: Optional[dict] = None
 
 
 class ClearRequest(BaseModel):
@@ -154,10 +155,20 @@ async def chat(request: ChatRequest):
         session_mgr.add_message(conversation_id, "user", request.message)
 
         # 调用 Agent 处理
-        response, trace = agent.run(request.message)
+        response, trace, token_usage = agent.run(request.message)
 
         # 保存助手回复到会话
         session_mgr.add_message(conversation_id, "assistant", response)
+
+        # 记录 Token 使用统计
+        if token_usage and token_usage.get("total_tokens", 0) > 0:
+            session_mgr.add_token_usage(
+                conversation_id=conversation_id,
+                prompt_tokens=token_usage.get("prompt_tokens", 0),
+                completion_tokens=token_usage.get("completion_tokens", 0),
+                total_tokens=token_usage.get("total_tokens", 0),
+                model="deepseek-chat"
+            )
 
         # 序列化 trace
         trace_dict = None
@@ -181,7 +192,8 @@ async def chat(request: ChatRequest):
         return ChatResponse(
             response=response,
             conversation_id=conversation_id,
-            trace=trace_dict
+            trace=trace_dict,
+            token_usage=token_usage if token_usage and token_usage.get("total_tokens", 0) > 0 else None
         )
 
     except Exception as e:
@@ -309,6 +321,27 @@ async def get_chat_history(conversation_id: str):
 
     except Exception as e:
         logger.error(f"获取会话历史错误: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/stats/token")
+async def get_token_stats(conversation_id: str):
+    """
+    获取会话的 Token 统计信息
+
+    查询参数：
+        conversation_id: 会话 ID
+
+    响应：
+        token 统计信息（调用次数、累计消耗、平均消耗）
+    """
+    try:
+        session_mgr = get_session_manager()
+        stats = session_mgr.get_token_stats(conversation_id)
+        return stats
+
+    except Exception as e:
+        logger.error(f"获取 Token 统计错误: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

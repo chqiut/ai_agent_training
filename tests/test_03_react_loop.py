@@ -84,13 +84,15 @@ class TestAgentRuntime:
                             }
                         }]
                     }
+                    usage = {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
                 return MockResponse()
 
         runtime = AgentRuntime(llm_client=MockLLMClient())
-        result, trace = runtime.run("测试输入")
+        result, trace, token_usage = runtime.run("测试输入")
 
         assert result == "测试回复"
         assert trace is not None
+        assert token_usage["total_tokens"] == 150
 
     def test_max_steps_protection(self):
         """测试最大步数保护"""
@@ -113,10 +115,11 @@ class TestAgentRuntime:
                             }
                         }]
                     }
+                    usage = {"prompt_tokens": 50, "completion_tokens": 10, "total_tokens": 60}
                 return MockResponse()
 
         runtime = AgentRuntime(llm_client=InfiniteLoopLLM(), max_steps=3)
-        result, trace = runtime.run("测试")
+        result, trace, token_usage = runtime.run("测试")
 
         # 应该达到最大步数限制
         assert trace.total_steps == 3
@@ -140,10 +143,11 @@ class TestReActFlow:
                             }
                         }]
                     }
+                    usage = {"prompt_tokens": 80, "completion_tokens": 20, "total_tokens": 100}
                 return MockResponse()
 
         runtime = AgentRuntime(llm_client=DirectResponseLLM())
-        result, trace = runtime.run("你好")
+        result, trace, token_usage = runtime.run("你好")
 
         assert result == "直接回答"
         assert trace.completed is True
@@ -174,6 +178,7 @@ class TestReActFlow:
                                 }
                             }]
                         }
+                        usage = {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130}
                     return MockResponse()
                 else:
                     # 第二次调用：完成
@@ -186,10 +191,11 @@ class TestReActFlow:
                                 }
                             }]
                         }
+                        usage = {"prompt_tokens": 120, "completion_tokens": 40, "total_tokens": 160}
                     return MockResponse()
 
         runtime = AgentRuntime(llm_client=ToolCallingLLM())
-        result, trace = runtime.run("查询数据")
+        result, trace, token_usage = runtime.run("查询数据")
 
         assert result == "查询结果是1"
         assert trace.total_steps == 2

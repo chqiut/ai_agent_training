@@ -104,6 +104,20 @@ class SessionManager:
             )
         """)
 
+        # Token 使用统计表
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS token_usage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                prompt_tokens INTEGER NOT NULL,
+                completion_tokens INTEGER NOT NULL,
+                total_tokens INTEGER NOT NULL,
+                model TEXT NOT NULL,
+                FOREIGN KEY (conversation_id) REFERENCES sessions(id)
+            )
+        """)
+
         conn.commit()
         conn.close()
 
@@ -313,6 +327,94 @@ class SessionManager:
             for msg in messages
         ]
 
+    def add_token_usage(
+        self,
+        conversation_id: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+        model: str
+    ) -> bool:
+        """
+        记录 Token 使用统计
+
+        Args:
+            conversation_id: 会话 ID
+            prompt_tokens: 提示词 token 数
+            completion_tokens: 完成回复 token 数
+            total_tokens: 总 token 数
+            model: 使用的模型名称
+
+        Returns:
+            是否成功
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO token_usage
+                (conversation_id, timestamp, prompt_tokens, completion_tokens, total_tokens, model)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                conversation_id,
+                datetime.now().isoformat(),
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                model
+            ))
+            conn.commit()
+            return True
+        except Exception:
+            return False
+        finally:
+            conn.close()
+
+    def get_token_stats(self, conversation_id: str) -> dict:
+        """
+        获取会话的 Token 统计信息
+
+        Args:
+            conversation_id: 会话 ID
+
+        Returns:
+            统计信息字典，包含累计和平均数据
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                COUNT(*) as call_count,
+                SUM(prompt_tokens) as total_prompt,
+                SUM(completion_tokens) as total_completion,
+                SUM(total_tokens) as total_tokens,
+                AVG(total_tokens) as avg_tokens
+            FROM token_usage
+            WHERE conversation_id = ?
+        """, (conversation_id,))
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if row[0] == 0:
+            return {
+                "call_count": 0,
+                "total_prompt_tokens": 0,
+                "total_completion_tokens": 0,
+                "total_tokens": 0,
+                "avg_tokens": 0
+            }
+
+        return {
+            "call_count": row[0],
+            "total_prompt_tokens": row[1] or 0,
+            "total_completion_tokens": row[2] or 0,
+            "total_tokens": row[3] or 0,
+            "avg_tokens": round(row[4] or 0, 2)
+        }
+
 
 # =============================================================================
 # 全局会话管理器实例
@@ -363,3 +465,21 @@ def update_messages(session_id: str, messages: list) -> bool:
 def get_conversation_context(session_id: str, max_messages: int = 10) -> list[dict]:
     """便捷函数：获取对话上下文"""
     return get_session_manager().get_conversation_context(session_id, max_messages)
+
+
+def add_token_usage(
+    conversation_id: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    total_tokens: int,
+    model: str
+) -> bool:
+    """便捷函数：记录 Token 使用统计"""
+    return get_session_manager().add_token_usage(
+        conversation_id, prompt_tokens, completion_tokens, total_tokens, model
+    )
+
+
+def get_token_stats(conversation_id: str) -> dict:
+    """便捷函数：获取 Token 统计信息"""
+    return get_session_manager().get_token_stats(conversation_id)

@@ -198,6 +198,7 @@ Observe: 获取工具结果
 | `/chat/stream` | GET | 流式聊天接口（SSE） |
 | `/chat/history` | GET | 获取会话历史 |
 | `/clear` | POST | 清空会话 |
+| `/stats/token` | GET | 获取 Token 统计信息 |
 | `/health` | GET | 健康检查 |
 
 ### 聊天接口示例
@@ -213,6 +214,9 @@ curl -N "http://localhost:8001/chat/stream?message=分析本月销售额&convers
 
 # 获取会话历史
 curl "http://localhost:8001/chat/history?conversation_id=xxx"
+
+# 获取 Token 统计
+curl "http://localhost:8001/stats/token?conversation_id=xxx"
 ```
 
 ### Web 界面功能

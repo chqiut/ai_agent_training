@@ -62,10 +62,12 @@ class LLMResponse:
         content: 模型回复的文本内容
         raw_response: 原始 API 响应（用于调试）
         finish_reason: 停止原因（stop 或 length）
+        usage: Token 使用统计信息
     """
     content: str
     raw_response: dict = field(default_factory=dict)
     finish_reason: str = "stop"
+    usage: dict = field(default_factory=dict)
 
 
 class LLMClient:
@@ -222,11 +224,29 @@ class LLMClient:
             # 这用于 Function Calling 场景
             tool_calls = assistant_message.get("tool_calls", [])
 
+            # 提取 Token 使用统计
+            usage = result.get("usage", {})
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+
+            # 记录 Token 使用日志
+            if total_tokens > 0:
+                logger.info(
+                    f"[LLM] prompt={prompt_tokens} completion={completion_tokens} "
+                    f"total={total_tokens} model={self.model}"
+                )
+
             # 构建响应对象
             llm_response = LLMResponse(
                 content=content,
                 raw_response=result,
-                finish_reason=choice.get("finish_reason", "stop")
+                finish_reason=choice.get("finish_reason", "stop"),
+                usage={
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total_tokens
+                }
             )
 
             # 如果有工具调用，可以在 raw_response 中找到

@@ -42,10 +42,12 @@ class ProcessResult:
         response: Agent 的最终回复
         trace: 执行轨迹
         conversation_id: 会话 ID
+        token_usage: Token 使用统计
     """
     response: str
     trace: ReActTrace
     conversation_id: Optional[str] = None
+    token_usage: Optional[dict] = None
 
 
 def create_agent() -> AgentRuntime:
@@ -94,12 +96,13 @@ def process(
     agent = create_agent()
 
     # 执行 ReAct 循环
-    response, trace = agent.run(user_input)
+    response, trace, token_usage = agent.run(user_input)
 
     return ProcessResult(
         response=response,
         trace=trace,
-        conversation_id=conversation_id
+        conversation_id=conversation_id,
+        token_usage=token_usage
     )
 
 
@@ -163,13 +166,15 @@ def main():
             print("Agent思考中...")
             print("-" * 40)
 
-            response, trace = agent.run(user_input)
+            response, trace, token_usage = agent.run(user_input)
 
             print()
             print(f"Agent: {response}")
             print()
             print("-" * 40)
             print(f"执行步数: {trace.total_steps}")
+            if token_usage and token_usage.get("total_tokens"):
+                print(f"Token 消耗: prompt={token_usage['prompt_tokens']} completion={token_usage['completion_tokens']} total={token_usage['total_tokens']}")
 
         except KeyboardInterrupt:
             print("\n再见！")
