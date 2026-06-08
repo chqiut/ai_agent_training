@@ -108,4 +108,4 @@ build/
 output/
 
 # 会话数据库
-sessions.db
+sessions.dbtest_output.txt
