@@ -180,7 +180,8 @@ async def chat(request: ChatRequest):
                         "thought": s.thought,
                         "tool_calls": s.tool_calls,
                         "tool_results": s.tool_results,
-                        "final_response": s.final_response
+                        "final_response": s.final_response,
+                        "decision": s.decision
                     }
                     for s in trace.steps
                 ],

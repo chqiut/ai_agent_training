@@ -232,7 +232,31 @@ function addTraceStep(step) {
         stepDiv.appendChild(thoughtBlock);
     }
 
+    // Decision 块 - 绿色决策风格
+    if (step.decision) {
+        const decisionBlock = document.createElement('div');
+        decisionBlock.className = 'trace-decision';
+        decisionBlock.innerHTML = `
+            <div class="trace-decision-header">✨ 决策</div>
+            <div class="trace-decision-content">${escapeHtml(step.decision)}</div>
+        `;
+        stepDiv.appendChild(decisionBlock);
+    }
+
     traceContent.appendChild(stepDiv);
+}
+
+/**
+ * 添加终止信号到 Trace 面板底部
+ */
+function addTerminationSignal(completed) {
+    const termBlock = document.createElement('div');
+    termBlock.className = completed ? 'trace-termination completed' : 'trace-termination interrupted';
+    termBlock.innerHTML = `
+        <div class="termination-icon">${completed ? '✅' : '⚠️'}</div>
+        <div class="termination-label">${completed ? 'Task Completed' : 'Process Interrupted'}</div>
+    `;
+    traceContent.appendChild(termBlock);
 }
 
 /**
@@ -562,6 +586,8 @@ async function handleSend() {
                 for (const step of data.trace.steps) {
                     addTraceStep(step);
                 }
+                // 添加终止信号
+                addTerminationSignal(data.trace.completed !== false && !data.trace.error);
             }
         }
 

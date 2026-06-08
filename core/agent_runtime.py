@@ -70,6 +70,7 @@ class ReActStep:
     tool_calls: list[dict] = field(default_factory=list)
     tool_results: list[dict] = field(default_factory=list)
     final_response: Optional[str] = None
+    decision: Optional[str] = None
 
 
 @dataclass
@@ -366,6 +367,13 @@ class AgentRuntime:
                 # 2. 或者工具执行后已经得到了足够的信息
                 final_response = assistant_message.get("content", "") or "已完成"
                 current_step.final_response = final_response
+
+                # 设置决策信息
+                collected_data_info = self._summarize_collected_data()
+                current_step.decision = (
+                    f"LLM 决定停止工具调用。\n"
+                    f"已收集数据：{collected_data_info}"
+                )
                 break
 
             # 有工具调用，执行工具
