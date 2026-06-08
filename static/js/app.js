@@ -387,6 +387,10 @@ async function sendMessageStream(message) {
                                     <div class="trace-observation-header">📟 观察结果</div>
                                     <div class="trace-observation-content"></div>
                                 </div>
+                                <div class="trace-decision" style="display:none;">
+                                    <div class="trace-decision-header">✨ 决策</div>
+                                    <div class="trace-decision-content"></div>
+                                </div>
                             `;
                             traceContent.appendChild(currentStepDiv);
                             break;
@@ -430,12 +434,12 @@ async function sendMessageStream(message) {
                         case 'decision':
                             // Decision 块 - 绿色决策风格（循环终止逻辑）
                             if (currentStepDiv) {
-                                const decisionBlock = document.createElement('div');
-                                decisionBlock.className = 'trace-decision';
-                                decisionBlock.innerHTML = `
-                                    <div class="trace-decision-content">✨ ${escapeHtml(content)}</div>
-                                `;
-                                currentStepDiv.appendChild(decisionBlock);
+                                const decisionBlock = currentStepDiv.querySelector('.trace-decision');
+                                if (decisionBlock) {
+                                    decisionBlock.style.display = 'block';
+                                    const contentDiv = decisionBlock.querySelector('.trace-decision-content');
+                                    if (contentDiv) contentDiv.textContent = content;
+                                }
                             }
                             break;
 

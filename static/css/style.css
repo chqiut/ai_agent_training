@@ -810,9 +810,7 @@ html, body {
     position: relative;
 }
 
-.trace-decision::before {
-    content: '✨ 决策';
-    display: block;
+.trace-decision-header {
     font-size: 10px;
     font-weight: 600;
     color: var(--accent-green);
