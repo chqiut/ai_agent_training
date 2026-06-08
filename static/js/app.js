@@ -174,76 +174,64 @@ async function copySessionId() {
  */
 function addTraceStep(step) {
     const stepDiv = document.createElement('div');
-    stepDiv.className = 'trace-step';
+    stepDiv.className = 'ReAct-step';
 
-    // 步骤头部
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'step-header';
-    headerDiv.innerHTML = `
-        <span class="step-number">${step.step_number}</span>
-        <span class="step-title">${step.tool_calls && step.tool_calls.length > 0
-            ? 'Tool Call: ' + step.tool_calls.map(c => c.function.name).join(', ')
-            : '思考中...'}</span>
+    // 步骤编号指示器
+    const indicatorDiv = document.createElement('div');
+    indicatorDiv.className = 'step-indicator';
+    indicatorDiv.innerHTML = `
+        <span class="step-badge">${step.step_number}</span>
+        <span>ReAct 步骤</span>
     `;
-    headerDiv.onclick = () => {
-        const content = stepDiv.querySelector('.step-content');
-        content.classList.toggle('expanded');
-    };
+    stepDiv.appendChild(indicatorDiv);
 
-    // 步骤内容
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'step-content expanded';
-
-    // Thought
+    // Thought 块 - 紫色气泡风格
     if (step.thought) {
-        contentDiv.innerHTML += `
-            <div class="thought-section">
-                <div class="thought-label">Thought</div>
-                <div class="thought-content">${escapeHtml(step.thought)}</div>
-            </div>
+        const thoughtBlock = document.createElement('div');
+        thoughtBlock.className = 'trace-thought';
+        thoughtBlock.innerHTML = `
+            <div class="trace-thought-content">${escapeHtml(step.thought)}</div>
         `;
+        stepDiv.appendChild(thoughtBlock);
     }
 
-    // Tool Calls
+    // Action 块 - 橙色代码风格
     if (step.tool_calls && step.tool_calls.length > 0) {
         for (const call of step.tool_calls) {
-            contentDiv.innerHTML += `
-                <div class="tool-section">
-                    <div class="tool-label">Tool Call</div>
-                    <div class="tool-call">
-                        <div class="tool-name">${call.function.name}</div>
-                        <div class="tool-args">${escapeHtml(call.function.arguments)}</div>
-                    </div>
-                </div>
+            const actionBlock = document.createElement('div');
+            actionBlock.className = 'trace-action';
+            actionBlock.innerHTML = `
+                <div class="trace-action-header">⚡ ${call.function.name}</div>
+                <div class="trace-action-args">${escapeHtml(call.function.arguments)}</div>
             `;
+            stepDiv.appendChild(actionBlock);
         }
     }
 
-    // Tool Results
+    // Observation 块 - 灰色终端风格
     if (step.tool_results && step.tool_results.length > 0) {
         for (const result of step.tool_results) {
             const success = result.success !== false;
-            contentDiv.innerHTML += `
-                <div class="tool-section">
-                    <div class="result-label">${success ? 'Result' : 'Error'}</div>
-                    <div class="result-content">${escapeHtml(result.output || result.error || JSON.stringify(result, null, 2))}</div>
-                </div>
+            const obsBlock = document.createElement('div');
+            obsBlock.className = 'trace-observation';
+            obsBlock.innerHTML = `
+                <div class="trace-observation-header">📟 ${success ? '观察结果' : '错误'}</div>
+                <div class="trace-observation-content">${escapeHtml(result.output || result.error || JSON.stringify(result, null, 2))}</div>
             `;
+            stepDiv.appendChild(obsBlock);
         }
     }
 
-    // Final Response
+    // Final Response - 渲染到 Thought 块
     if (step.final_response) {
-        contentDiv.innerHTML += `
-            <div class="thought-section">
-                <div class="thought-label">Final Response</div>
-                <div class="thought-content">${escapeHtml(step.final_response)}</div>
-            </div>
+        const thoughtBlock = document.createElement('div');
+        thoughtBlock.className = 'trace-thought';
+        thoughtBlock.innerHTML = `
+            <div class="trace-thought-content">${escapeHtml(step.final_response)}</div>
         `;
+        stepDiv.appendChild(thoughtBlock);
     }
 
-    stepDiv.appendChild(headerDiv);
-    stepDiv.appendChild(contentDiv);
     traceContent.appendChild(stepDiv);
 }
 
@@ -380,93 +368,79 @@ async function sendMessageStream(message) {
 
                     switch (type) {
                         case 'step':
-                            // 开始新步骤
+                            // 开始新步骤 - 创建 ReAct 步骤容器
                             currentStepDiv = document.createElement('div');
-                            currentStepDiv.className = 'trace-step';
+                            currentStepDiv.className = 'ReAct-step';
                             currentStepDiv.innerHTML = `
-                                <div class="step-header">
-                                    <span class="step-number">${data.step}</span>
-                                    <span class="step-title">步骤 ${data.step}</span>
+                                <div class="step-indicator">
+                                    <span class="step-badge">${data.step}</span>
+                                    <span>ReAct 步骤</span>
                                 </div>
-                                <div class="step-content expanded">
-                                    <div class="thought-section">
-                                        <div class="thought-label">思考中</div>
-                                        <div class="thought-content"></div>
-                                    </div>
-                                    <div class="tool-call-section" style="display:none;">
-                                        <div class="tool-label">行动</div>
-                                        <div class="tool-name"></div>
-                                    </div>
-                                    <div class="result-section" style="display:none;">
-                                        <div class="tool-section">
-                                            <div class="result-label">观察结果</div>
-                                            <div class="result-content"></div>
-                                        </div>
-                                    </div>
+                                <div class="trace-thought" style="display:none;">
+                                    <div class="trace-thought-content"></div>
+                                </div>
+                                <div class="trace-action" style="display:none;">
+                                    <div class="trace-action-header"></div>
+                                    <div class="trace-action-args"></div>
+                                </div>
+                                <div class="trace-observation" style="display:none;">
+                                    <div class="trace-observation-header">📟 观察结果</div>
+                                    <div class="trace-observation-content"></div>
                                 </div>
                             `;
                             traceContent.appendChild(currentStepDiv);
-                            thoughtSection = currentStepDiv.querySelector('.thought-content');
                             break;
 
                         case 'thought':
-                            // 思考内容
+                            // Thought 块 - 紫色气泡风格
                             if (currentStepDiv) {
-                                const header = currentStepDiv.querySelector('.step-header .step-title');
-                                header.textContent = '思考中';
-                                const label = currentStepDiv.querySelector('.thought-label');
-                                if (label) label.textContent = '思考中';
-                                if (thoughtSection) {
-                                    thoughtSection.textContent = content;
+                                const thoughtBlock = currentStepDiv.querySelector('.trace-thought');
+                                if (thoughtBlock) {
+                                    thoughtBlock.style.display = 'block';
+                                    const contentDiv = thoughtBlock.querySelector('.trace-thought-content');
+                                    if (contentDiv) contentDiv.textContent = content;
                                 }
                             }
                             break;
 
                         case 'tool_call':
-                            // 工具调用
+                            // Action 块 - 橙色代码风格
                             if (currentStepDiv) {
-                                const header = currentStepDiv.querySelector('.step-header .step-title');
-                                header.textContent = content;
-
-                                // 显示工具调用区域
-                                const toolCallSection = currentStepDiv.querySelector('.tool-call-section');
-                                if (toolCallSection) {
-                                    toolCallSection.style.display = 'block';
-                                    const toolName = toolCallSection.querySelector('.tool-name');
-                                    if (toolName) toolName.textContent = content;
+                                const actionBlock = currentStepDiv.querySelector('.trace-action');
+                                if (actionBlock) {
+                                    actionBlock.style.display = 'block';
+                                    const header = actionBlock.querySelector('.trace-action-header');
+                                    if (header) header.textContent = '⚡ ' + content;
                                 }
                             }
                             break;
 
                         case 'tool_result':
-                            // 工具执行结果（观察阶段）
+                            // Observation 块 - 灰色终端风格
                             if (currentStepDiv) {
-                                const header = currentStepDiv.querySelector('.step-header .step-title');
-                                header.textContent = '观察结果';
-
-                                // 显示结果区域
-                                const resultSection = currentStepDiv.querySelector('.result-section');
-                                if (resultSection) {
-                                    resultSection.style.display = 'block';
-                                    const resultContent = resultSection.querySelector('.result-content');
-                                    if (resultContent) {
-                                        resultContent.textContent = content;
-                                    }
+                                const obsBlock = currentStepDiv.querySelector('.trace-observation');
+                                if (obsBlock) {
+                                    obsBlock.style.display = 'block';
+                                    const obsContent = obsBlock.querySelector('.trace-observation-content');
+                                    if (obsContent) obsContent.textContent = content;
                                 }
                             }
                             break;
 
                         case 'final':
-                            // 最终回复
+                            // 最终回复 - 更新到 Thought 块作为最终输出
                             finalResponse = content;
                             if (currentStepDiv) {
-                                const header = currentStepDiv.querySelector('.step-header .step-title');
-                                if (header) header.textContent = '完成';
-                                const label = currentStepDiv.querySelector('.thought-label');
-                                if (label) label.textContent = '最终回复';
-                            }
-                            if (thoughtSection) {
-                                thoughtSection.textContent = content;
+                                const thoughtBlock = currentStepDiv.querySelector('.trace-thought');
+                                if (thoughtBlock) {
+                                    thoughtBlock.style.display = 'block';
+                                    const contentDiv = thoughtBlock.querySelector('.trace-thought-content');
+                                    if (contentDiv) {
+                                        contentDiv.textContent = content;
+                                    }
+                                    // 更新 Thought 标签
+                                    thoughtBlock.querySelector('::before') // CSS 伪元素无法修改，用 style 代替
+                                }
                             }
                             break;
 

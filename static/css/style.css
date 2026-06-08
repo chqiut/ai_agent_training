@@ -648,6 +648,159 @@ html, body {
 }
 
 /* ============================================================================
+   ReAct 步骤流展示（Trace Panel 重构）
+   ============================================================================ */
+
+/* ReAct 步骤容器 */
+.ReAct-step {
+    margin-bottom: 20px;
+    position: relative;
+    padding-left: 8px;
+}
+
+/* 步骤编号指示器 */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.step-indicator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--border-color), transparent);
+    margin-left: 8px;
+}
+
+/* Thought 块 - 紫色气泡风格 */
+.trace-thought {
+    background: var(--bg-tertiary);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    position: relative;
+}
+
+.trace-thought::before {
+    content: '💭 Thought';
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-purple);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.trace-thought-content {
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Action 块 - 橙色代码风格 */
+.trace-action {
+    background: var(--bg-primary);
+    border: 1px solid var(--accent-orange);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.trace-action-header {
+    background: var(--accent-orange);
+    color: white;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.trace-action-args {
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.trace-action-args::before {
+    content: '⚡ Action / 参数';
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-orange);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+/* Observation 块 - 灰色终端风格 */
+.trace-observation {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-family: var(--font-mono);
+    overflow: hidden;
+}
+
+.trace-observation-header {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.trace-observation-content {
+    padding: 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: repeating-linear-gradient(
+        var(--bg-primary) 0px,
+        var(--bg-primary) 18px,
+        var(--bg-secondary) 18px,
+        var(--bg-secondary) 19px
+    );
+}
+
+/* 步骤间连接线 */
+.ReAct-step + .ReAct-step {
+    border-left: 2px solid var(--border-color);
+    margin-left: 8px;
+    padding-left: 16px;
+}
+
+/* ============================================================================
    响应式
    ============================================================================ */
 
