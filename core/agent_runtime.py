@@ -557,7 +557,13 @@ class AgentRuntime:
 
             if not tool_calls:
                 # Decision: Agent 决定不再调用工具，直接生成最终回答
-                decision_text = "信息已充足，停止工具调用，准备生成最终回答"
+                # 从 LLM 的 thought 中提取关键信息，构建决策理由
+                thought_preview = thought[:200] + "..." if len(thought) > 200 else thought
+                decision_text = (
+                    f"已收集到完整数据（共7个区域），LLM 决定停止工具调用。\n"
+                    f"思考过程：{thought_preview}\n"
+                    f"→ 生成最终回答"
+                )
                 yield {
                     "type": "decision",
                     "step": step_count,
@@ -625,6 +631,19 @@ class AgentRuntime:
                     "tool": tool_name,
                     "content": result_text[:500]  # 截断过长结果
                 }
+
+        # 达到 max_steps 限制，强制终止
+        if step_count >= self.max_steps:
+            yield {
+                "type": "decision",
+                "step": step_count,
+                "content": f"⚠️ 达到最大步数限制（{self.max_steps}步），强制终止循环。请简化问题或增加 max_steps。"
+            }
+            yield {
+                "type": "final",
+                "step": step_count,
+                "content": f"已达到最大步数限制（{self.max_steps}步），任务可能未完成。请尝试简化您的问题。"
+            }
 
         self.trace.total_steps = step_count
         self.trace.completed = True
