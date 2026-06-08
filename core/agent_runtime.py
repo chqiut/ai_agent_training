@@ -558,9 +558,14 @@ class AgentRuntime:
             if not tool_calls:
                 # Decision: Agent 决定不再调用工具，直接生成最终回答
                 # 从 LLM 的 thought 中提取关键信息，构建决策理由
-                thought_preview = thought[:200] + "..." if len(thought) > 200 else thought
+                thought_preview = thought[:300] + "..." if len(thought) > 300 else thought
+
+                # 分析已收集的工具结果，检查数据完整性
+                collected_data_info = self._summarize_collected_data()
+
                 decision_text = (
-                    f"已收集到完整数据（共7个区域），LLM 决定停止工具调用。\n"
+                    f"LLM 决定停止工具调用。\n"
+                    f"已收集数据：{collected_data_info}\n"
                     f"思考过程：{thought_preview}\n"
                     f"→ 生成最终回答"
                 )
@@ -647,6 +652,46 @@ class AgentRuntime:
 
         self.trace.total_steps = step_count
         self.trace.completed = True
+
+    def _summarize_collected_data(self) -> str:
+        """
+        总结已收集的数据，检测数据完整性
+        用于在 Decision 中向用户展示已收集了哪些数据
+        """
+        summaries = []
+        for entry in self.memory.tool_calls:
+            tool_name = entry.get("tool_name", "")
+            result = entry.get("result", {})
+            if result.get("success"):
+                row_count = result.get("row_count", 0)
+                columns = result.get("columns", [])
+                columns_str = ", ".join(columns[:5])  # 只显示前5列
+                if len(columns) > 5:
+                    columns_str += "..."
+
+                # 检测关键维度是否存在
+                key_dims = []
+                for col in columns:
+                    col_lower = col.lower()
+                    if any(k in col_lower for k in ["区域", "region"]):
+                        key_dims.append("区域维度")
+                    if any(k in col_lower for k in ["产品", "product", "商品"]):
+                        key_dims.append("产品维度")
+                    if any(k in col_lower for k in ["月份", "month", "月度"]):
+                        key_dims.append("时间维度")
+
+                dims_str = ", ".join(set(key_dims)) if key_dims else "通用维度"
+
+                summaries.append(
+                    f"{tool_name}({row_count}行, 含{dims_str}: {columns_str})"
+                )
+            else:
+                summaries.append(f"{tool_name}(失败)")
+
+        if not summaries:
+            return "无工具调用记录"
+
+        return " | ".join(summaries)
 
     def clear(self) -> None:
         """清空当前会话状态"""
