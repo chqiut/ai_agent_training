@@ -717,7 +717,7 @@ html, body {
     word-break: break-word;
 }
 
-/* Action 块 - 橙色代码风格 */
+/* Action 块 - 橙色扁平化设计 */
 .trace-action {
     background: var(--bg-primary);
     border: 1px solid var(--accent-orange);
@@ -729,32 +729,23 @@ html, body {
 .trace-action-header {
     background: var(--accent-orange);
     color: white;
-    padding: 6px 12px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 12px;
     font-weight: 600;
     font-family: var(--font-mono);
 }
 
 .trace-action-args {
-    padding: 10px;
+    padding: 12px;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-secondary);
     background: var(--bg-primary);
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-word;
-}
-
-.trace-action-args::before {
-    content: '⚡ Action / 参数';
-    display: block;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--accent-orange);
-    text-transform: uppercase;
-    margin-bottom: 6px;
+    line-height: 1.5;
 }
 
 /* Observation 块 - 灰色终端风格 */

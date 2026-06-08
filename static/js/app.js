@@ -195,13 +195,13 @@ function addTraceStep(step) {
         stepDiv.appendChild(thoughtBlock);
     }
 
-    // Action 块 - 橙色代码风格
+    // Action 块 - 橙色扁平化设计
     if (step.tool_calls && step.tool_calls.length > 0) {
         for (const call of step.tool_calls) {
             const actionBlock = document.createElement('div');
             actionBlock.className = 'trace-action';
             actionBlock.innerHTML = `
-                <div class="trace-action-header">⚡ ${call.function.name}</div>
+                <div class="trace-action-header">⚡ Action: ${call.function.name}</div>
                 <div class="trace-action-args">${escapeHtml(call.function.arguments)}</div>
             `;
             stepDiv.appendChild(actionBlock);
@@ -432,13 +432,13 @@ async function sendMessageStream(message) {
                             break;
 
                         case 'tool_call':
-                            // Action 块 - 橙色代码风格
+                            // Action 块 - 橙色扁平化设计
                             if (currentStepDiv) {
                                 const actionBlock = currentStepDiv.querySelector('.trace-action');
                                 if (actionBlock) {
                                     actionBlock.style.display = 'block';
                                     const header = actionBlock.querySelector('.trace-action-header');
-                                    if (header) header.textContent = '⚡ ' + content;
+                                    if (header) header.textContent = '⚡ Action: ' + content;
                                 }
                             }
                             break;
