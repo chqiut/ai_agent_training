@@ -659,34 +659,40 @@ class AgentRuntime:
         用于在 Decision 中向用户展示已收集了哪些数据
         """
         summaries = []
-        for entry in self.memory.tool_calls:
-            tool_name = entry.get("tool_name", "")
-            result = entry.get("result", {})
-            if result.get("success"):
-                row_count = result.get("row_count", 0)
-                columns = result.get("columns", [])
-                columns_str = ", ".join(columns[:5])  # 只显示前5列
-                if len(columns) > 5:
-                    columns_str += "..."
 
-                # 检测关键维度是否存在
-                key_dims = []
-                for col in columns:
-                    col_lower = col.lower()
-                    if any(k in col_lower for k in ["区域", "region"]):
-                        key_dims.append("区域维度")
-                    if any(k in col_lower for k in ["产品", "product", "商品"]):
-                        key_dims.append("产品维度")
-                    if any(k in col_lower for k in ["月份", "month", "月度"]):
-                        key_dims.append("时间维度")
+        # 遍历 short_term 中的消息记录，获取 tool_calls
+        for msg in self.memory.short_term.messages:
+            tool_calls = getattr(msg, 'tool_calls', None)
+            if not tool_calls:
+                continue
+            for call in tool_calls:
+                tool_name = call.get("tool", "")
+                result = call.get("result", {})
+                if result.get("success"):
+                    row_count = result.get("row_count", 0)
+                    columns = result.get("columns", [])
+                    columns_str = ", ".join(columns[:5])  # 只显示前5列
+                    if len(columns) > 5:
+                        columns_str += "..."
 
-                dims_str = ", ".join(set(key_dims)) if key_dims else "通用维度"
+                    # 检测关键维度是否存在
+                    key_dims = []
+                    for col in columns:
+                        col_lower = col.lower()
+                        if any(k in col_lower for k in ["区域", "region"]):
+                            key_dims.append("区域")
+                        if any(k in col_lower for k in ["产品", "product", "商品", "item"]):
+                            key_dims.append("产品")
+                        if any(k in col_lower for k in ["月份", "month", "时间"]):
+                            key_dims.append("时间")
 
-                summaries.append(
-                    f"{tool_name}({row_count}行, 含{dims_str}: {columns_str})"
-                )
-            else:
-                summaries.append(f"{tool_name}(失败)")
+                    dims_str = "/".join(set(key_dims)) if key_dims else "通用"
+
+                    summaries.append(
+                        f"{tool_name}({row_count}行, [{dims_str}])"
+                    )
+                else:
+                    summaries.append(f"{tool_name}(失败)")
 
         if not summaries:
             return "无工具调用记录"
