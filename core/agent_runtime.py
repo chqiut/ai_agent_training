@@ -556,6 +556,13 @@ class AgentRuntime:
             tool_calls = assistant_message.get("tool_calls", [])
 
             if not tool_calls:
+                # Decision: Agent 决定不再调用工具，直接生成最终回答
+                decision_text = "信息已充足，停止工具调用，准备生成最终回答"
+                yield {
+                    "type": "decision",
+                    "step": step_count,
+                    "content": decision_text
+                }
                 final_response = thought or "已完成"
                 yield {
                     "type": "final",

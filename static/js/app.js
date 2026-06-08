@@ -427,6 +427,18 @@ async function sendMessageStream(message) {
                             }
                             break;
 
+                        case 'decision':
+                            // Decision 块 - 绿色决策风格（循环终止逻辑）
+                            if (currentStepDiv) {
+                                const decisionBlock = document.createElement('div');
+                                decisionBlock.className = 'trace-decision';
+                                decisionBlock.innerHTML = `
+                                    <div class="trace-decision-content">✨ ${escapeHtml(content)}</div>
+                                `;
+                                currentStepDiv.appendChild(decisionBlock);
+                            }
+                            break;
+
                         case 'final':
                             // 最终回复 - 更新到 Thought 块作为最终输出
                             finalResponse = content;

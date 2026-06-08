@@ -800,6 +800,38 @@ html, body {
     padding-left: 16px;
 }
 
+/* Decision 块 - 绿色决策风格（循环终止逻辑） */
+.trace-decision {
+    background: linear-gradient(135deg, rgba(63, 185, 80, 0.15), rgba(63, 185, 80, 0.05));
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.trace-decision::before {
+    content: '✨ 决策';
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-green);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.trace-decision-content {
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12px;
+    line-height: 1.6;
+    background: var(--bg-primary);
+    padding: 8px 10px;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent-green);
+}
+
 /* ============================================================================
    响应式
    ============================================================================ */
