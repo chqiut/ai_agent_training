@@ -830,6 +830,38 @@ html, body {
     border-left: 3px solid var(--accent-green);
 }
 
+/* 终止信号 - 任务完成/中断 */
+.trace-termination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.trace-termination.completed {
+    background: linear-gradient(135deg, rgba(63, 185, 80, 0.2), rgba(63, 185, 80, 0.08));
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+}
+
+.trace-termination.interrupted {
+    background: linear-gradient(135deg, rgba(248, 81, 73, 0.2), rgba(248, 81, 73, 0.08));
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+}
+
+.termination-icon {
+    font-size: 16px;
+}
+
+.termination-label {
+    flex: 1;
+}
+
 /* ============================================================================
    响应式
    ============================================================================ */

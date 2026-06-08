@@ -580,6 +580,12 @@ class AgentRuntime:
                     "step": step_count,
                     "content": final_response
                 }
+                # 终止信号 - 任务完成
+                yield {
+                    "type": "termination",
+                    "step": step_count,
+                    "content": "Task Completed"
+                }
                 break
 
             # Act
@@ -648,6 +654,12 @@ class AgentRuntime:
                 "type": "final",
                 "step": step_count,
                 "content": f"已达到最大步数限制（{self.max_steps}步），任务可能未完成。请尝试简化您的问题。"
+            }
+            # 终止信号 - 过程中断
+            yield {
+                "type": "termination",
+                "step": step_count,
+                "content": "Process Interrupted"
             }
 
         self.trace.total_steps = step_count

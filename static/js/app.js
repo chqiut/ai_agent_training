@@ -460,6 +460,18 @@ async function sendMessageStream(message) {
                             }
                             break;
 
+                        case 'termination':
+                            // 终止信号 - 任务完成/中断
+                            const termBlock = document.createElement('div');
+                            const isInterrupted = content === 'Process Interrupted';
+                            termBlock.className = isInterrupted ? 'trace-termination interrupted' : 'trace-termination completed';
+                            termBlock.innerHTML = `
+                                <div class="termination-icon">${isInterrupted ? '⚠️' : '✅'}</div>
+                                <div class="termination-label">${escapeHtml(content)}</div>
+                            `;
+                            traceContent.appendChild(termBlock);
+                            break;
+
                         case 'done':
                             // 完成
                             finalConversationId = data.conversation_id;
